@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional
 from models.helpers import ExtractVersion, ExtractIPAddress
+from models.peer import Peer
 
 @dataclass
 class LastBlock:
@@ -67,6 +68,7 @@ class Node:
     proxies: Optional[List[str]] = None
     lastblock: Optional[LastBlock] = None
     ports: Optional[Ports] = None
+    peers: List[Peer] = field(default_factory=list)
 
     def to_dict(self):
         return {
@@ -79,6 +81,7 @@ class Node:
             "proxies": self.proxies,
             "lastblock": self.lastblock.to_dict() if self.lastblock else None,
             "ports": self.ports.to_dict() if self.ports else None,
+            "peers": [peer.to_dict() for peer in self.peers],
         }
     
     @classmethod

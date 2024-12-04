@@ -5,6 +5,7 @@ from models.helpers import ExtractVersion, ExtractIPAddress
 @dataclass
 class Peer:
     address: str
+    address_node: str
     services: Optional[str] = None
     relaytxes: Optional[bool] = None
     lastsend: Optional[int] = None
@@ -24,6 +25,7 @@ class Peer:
     def to_dict(self):
         return {
             "address": self.address,
+            "address_node": self.address_node,
             "services": self.services,
             "relaytxes": self.relaytxes,
             "lastsend": self.lastsend,
@@ -45,6 +47,7 @@ class Peer:
     def from_dict(cls, data: dict):
         return cls(
             address = ExtractIPAddress(data.get("addr") if data.get("addr") else data.get("address") ),
+            address_node = str(data.get('address_node')),
             services = data.get("services"),
             relaytxes = data.get("relaytxes"),
             lastsend = data.get("lastsend"),

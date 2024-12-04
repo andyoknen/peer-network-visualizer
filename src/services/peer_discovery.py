@@ -66,7 +66,7 @@ class PeerDiscovery:
         """Сохранение информации о пирах в базу данных"""
         try:
             await self.db.peers.update_one(
-                {"node_address": node.address, "peer_address": peer.address},
+                {"address_node": node.address, "address": peer.address},
                 {"$set": peer.to_dict()},
                 upsert=True
             )
@@ -79,11 +79,6 @@ class PeerDiscovery:
         peers = []
 
         try:
-            await self.db.peers.delete_many(
-                {"node_address": node.address}
-            )
-            log.info(f"Все пиры для узла {node.address} удалены из базы данных")
-
             async with ClientSession() as session:
                 async with session.post(
                     f'http://{node.address}:38081/rpc/public/',
@@ -103,13 +98,14 @@ class PeerDiscovery:
                     
                     for peer_data in data['result']:
                         peer_new = Peer.from_dict(peer_data)
+                        peer_new.address_node = node.address
+                        await self.save_peer_to_db(node, peer_new)
+
                         node_new = Node.from_dict(peer_data)
                         node_new.lastblock = LastBlock()
                         node_new.lastblock.height = peer_new.synced_blocks
                         peers.append(node_new)
 
-                        # Сохраняем информацию о пирах в базу данных
-                        await self.save_peer_to_db(node, peer_new)
 
         except Exception as e:
             log.warning(f"Ошибка при получении пиров от {node.address}: {e}")
