@@ -2,23 +2,10 @@ import asyncio
 import uvicorn
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
-import yaml
 from contextlib import asynccontextmanager
 from api.routes import router
 from services.peer_discovery import PeerDiscovery
-
-
-# Настройка логирования
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-log = logging.getLogger(__name__)
-
-# Загрузка конфигурации
-def load_config():
-    with open('config/config.yml', 'r') as f:
-        return yaml.safe_load(f)
-    
-config = load_config()
+from services.helpers import config
 
 # Контекст-менеджер для FastAPI
 @asynccontextmanager

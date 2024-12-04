@@ -2,13 +2,9 @@ from fastapi import APIRouter
 from pymongo import MongoClient
 from models.node import Node
 from models.peer import Peer
-import yaml
+from services.helpers import config
 
 router = APIRouter()
-
-# Чтение конфигурации из файла
-with open("config/config.yml", "r") as file:
-    config = yaml.safe_load(file)
 
 # Создание клиента MongoDB с использованием конфигурации
 client = MongoClient(config['mongodb']['uri'])

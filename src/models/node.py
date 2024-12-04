@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
-from models.helpers import ExtractVersion, ExtractIPAddress
+from services.helpers import ExtractVersion, ExtractIPAddress
 from models.peer import Peer
 
 @dataclass

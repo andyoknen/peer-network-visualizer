@@ -3,11 +3,16 @@ services:
   node-monitor:
     build: 
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/dockerfile
     depends_on:
       - mongodb
+    ports:
+      - 5000:5000
 
   mongodb:
     image: mongo:4.4
     volumes:
       - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
