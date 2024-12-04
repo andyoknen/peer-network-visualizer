@@ -72,7 +72,7 @@
     <script>
         let nodes = []; // Хранение узлов для сортировки
         let currentSortColumn = 0; // Индекс текущей колонки сортировки
-        let currentSortDirection = 'asc'; // Направление сортировки (asc или desc)
+        let currentSortDirection = 'desc'; // Направление сортировки (asc или desc)
 
         function versionToNumber(version) {
             // Разделяем строку версии на части
@@ -103,7 +103,7 @@
                     currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
                 } else {
                     currentSortColumn = columnIndex;
-                    currentSortDirection = 'asc'; // Сбрасываем направление на 'asc' для новой колонки
+                    currentSortDirection = 'desc'; // Сбрасываем направление на 'desc' для новой колонки
                 }
             }
 
