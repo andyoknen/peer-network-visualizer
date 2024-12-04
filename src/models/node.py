@@ -1,32 +1,6 @@
-import re
 from dataclasses import dataclass
 from typing import List, Optional
-from datetime import datetime
-
-@dataclass
-class Peer:
-    addr: Optional[str] = None
-    services: Optional[str] = None
-    relaytxes: Optional[bool] = None
-    lastsend: Optional[int] = None
-    lastrecv: Optional[int] = None
-    conntime: Optional[int] = None
-    timeoffset: Optional[int] = None
-    pingtime: Optional[int] = None
-    protocol: Optional[int] = None
-    version: Optional[str] = None
-    inbound: Optional[bool] = None
-    startingheight: Optional[int] = None
-    whitelisted: Optional[bool] = None
-    banscore: Optional[int] = None
-    synced_headers: Optional[int] = None
-    synced_blocks: Optional[int] = None
-
-    def Version(self) -> str:
-        match = re.search(r'/Satoshi:([^/]+)/', self.version)
-        if match:
-            return match.group(1)
-        return None
+from models.helpers import ExtractVersion, ExtractIPAddress
 
 @dataclass
 class LastBlock:
@@ -34,6 +8,23 @@ class LastBlock:
     hash: Optional[str] = None
     time: Optional[int] = None
     ntx: Optional[int] = None
+
+    def to_dict(self):
+        return {
+            "height": self.height,
+            "hash": self.hash,
+            "time": self.time,
+            "ntx": self.ntx,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Optional[dict] = None):
+        return cls(
+            height=data.get("height"),
+            hash=data.get("hash"),
+            time=data.get("time"),
+            ntx=data.get("ntx"),
+        ) if data is not None else None
 
 @dataclass
 class Ports:
@@ -43,6 +34,27 @@ class Ports:
     wss: Optional[int] = None
     http: Optional[int] = None
     https: Optional[int] = None
+
+    def to_dict(self):
+        return {
+            "node": self.node,
+            "api": self.api,
+            "rest": self.rest,
+            "wss": self.wss,
+            "http": self.http,
+            "https": self.https,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Optional[dict] = None):
+        return cls(
+            node=data.get("node"),
+            api=data.get("api"),
+            rest=data.get("rest"),
+            wss=data.get("wss"),
+            http=data.get("http"),
+            https=data.get("https"),
+        ) if data is not None else None
 
 @dataclass
 class Node:
@@ -56,14 +68,32 @@ class Node:
     lastblock: Optional[LastBlock] = None
     ports: Optional[Ports] = None
 
-    def __init__(self, data: any):
-        if type(data) is str:
-            self.address = data
-
-        if type(data) is Peer:
-            self.address = data.addr
-            self.version = data.Version()
-            self.lastblock = LastBlock()
-            self.lastblock.height = data.synced_blocks
+    def to_dict(self):
+        return {
+            "address": self.address,
+            "version": self.version,
+            "time": self.time,
+            "chain": self.chain,
+            "proxy": self.proxy,
+            "netstakeweight": self.netstakeweight,
+            "proxies": self.proxies,
+            "lastblock": self.lastblock.to_dict() if self.lastblock else None,
+            "ports": self.ports.to_dict() if self.ports else None,
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(
+            address = ExtractIPAddress(data.get("addr") if data.get("addr") else data.get("address")),
+            version = data.get("version"),
+            time = data.get("time"),
+            chain = data.get("chain"),
+            proxy = data.get("proxy"),
+            netstakeweight = data.get("netstakeweight"),
+            proxies = data.get("proxies"),
+            lastblock = LastBlock.from_dict(data.get("lastblock")) if data.get("lastblock") else None,
+            ports = Ports.from_dict(data.get("ports")) if data.get("ports") else None,
+        )
+    
 
     

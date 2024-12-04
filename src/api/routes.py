@@ -2,12 +2,12 @@ from fastapi import APIRouter
 
 router = APIRouter()
 
-@router.get("/nodes")
+@router.post("/nodes")
 async def get_nodes():
     # Получение списка активных узлов
     pass
 
-@router.get("/metrics")
+@router.post("/metrics")
 async def get_metrics():
     # Получение агрегированной статистики сети
     pass

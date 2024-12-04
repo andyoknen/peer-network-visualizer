@@ -19,6 +19,7 @@ Pocketnet Node Monitor - это инструмент для отслеживан
 
 - Docker
 - Docker Compose
+- MongoDB
 - Доступ к сети Pocketnet
 
 ## Установка и запуск
@@ -31,10 +32,14 @@ cd pocketnet-node-monitor
 
 2. Настройте конфигурацию в `config/config.yml`:
 ```yaml
+fastapi:
+  host: 0.0.0.0
+  port: 5000
+
 scanner:
   scan_interval: 300  # интервал сканирования в секундах
   timeout: 5         # таймаут подключения
-  rpc_port: 8080     # порт RPC API
+  rpc_port: 38081     # порт RPC API
 
 mongodb:
   uri: mongodb://mongodb:27017
@@ -112,11 +117,6 @@ venv\Scripts\activate     # для Windows
 pip install -r requirements.txt
 ```
 
-3. Запустите тесты:
-```bash
-pytest tests/
-```
-
 ## Структура проекта
 
 ```
@@ -144,13 +144,12 @@ pocketnet-node-monitor/
 
 ## Лицензия
 
-MIT License
+[Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Поддержка
 
 При возникновении проблем создавайте issue в репозитории проекта или обращайтесь к разработчикам:
-- Email: support@example.com
-- Telegram: @pocketnet_support
+- Email: core@pocketnet.app
 
 ## Участие в разработке
 
@@ -159,4 +158,3 @@ MIT License
 3. Внесите изменения
 4. Отправьте pull request
 
-Пожалуйста, убедитесь, что ваш код соответствует стандартам PEP 8 и покрыт тестами.
