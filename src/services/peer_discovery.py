@@ -123,7 +123,7 @@ class PeerDiscovery:
                         "method": "getnodeinfo",
                         "params": []
                     },
-                    timeout=5
+                    timeout = ClientTimeout(total=5)
                 ) as response:
                     if response.status != 200:
                         return None

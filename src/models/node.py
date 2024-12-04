@@ -88,7 +88,7 @@ class Node:
     def from_dict(cls, data: dict):
         return cls(
             address = ExtractIPAddress(data.get("addr") if data.get("addr") else data.get("address")),
-            version = data.get("version"),
+            version = ExtractVersion(data.get("version")),
             time = data.get("time"),
             chain = data.get("chain"),
             proxy = data.get("proxy"),

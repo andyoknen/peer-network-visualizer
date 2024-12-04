@@ -1,8 +1,10 @@
+import os
 from fastapi import APIRouter
 from pymongo import MongoClient
 from models.node import Node
 from models.peer import Peer
 from services.helpers import config
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
@@ -10,8 +12,8 @@ router = APIRouter()
 client = MongoClient(config['mongodb']['uri'])
 db = client[config['mongodb']['database']]
 
-@router.post("/nodes")
-async def get_nodes():
+@router.post("/list_nodes")
+async def post_nodes():
     # Получение списка узлов
     nodes = [ Node.from_dict(doc) for doc in db.nodes.find({}) ]
     # Получение списка пиров
@@ -25,7 +27,7 @@ async def get_nodes():
     # Форматирование списка узлов для возврата в формате JSON
     return [node.to_dict() for node in nodes]
 
-@router.post("/metrics")
-async def get_metrics():
-    # Получение агрегированной статистики сети
-    pass
+@router.get("/nodes")
+async def get_nodes():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    return FileResponse(os.path.join(current_dir, "../www/nodes.html"))

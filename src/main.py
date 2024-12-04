@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 
 # Создание FastAPI приложения
 app = FastAPI(lifespan=lifespan)
-app.include_router(router, prefix="/api/v1")
+app.include_router(router, prefix="")
 
 # Запуск приложения
 if __name__ == "__main__":

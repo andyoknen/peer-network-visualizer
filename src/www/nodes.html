@@ -1,0 +1,133 @@
+<!-- www/nodes.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список Узлов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        .old-version {
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Список Узлов</h1>
+    </header>
+    <main>
+        <table>
+            <thead>
+                <tr>
+                    <th>Адрес</th>
+                    <th>Версия</th>
+                    <th>Высота</th>
+                    <th>Состояние</th>
+                    <th>Пиры</th>
+                    <th>Доступ</th>
+                </tr>
+            </thead>
+            <tbody id="node-list">
+                <!-- Здесь будет динамически добавлен список узлов -->
+            </tbody>
+        </table>
+    </main>
+    <script>
+        let nodes = []; // Хранение узлов для сортировки
+
+        function versionToNumber(version) {
+            // Разделяем строку версии на части
+            const parts = version.split('.');
+
+            // Объединяем части, убирая точки
+            return parseFloat(parts[0] + '.' + parts[1] + parts[2]);
+        }
+
+        function sortNodes(columnIndex) {
+            const columnKeys = ['address', 'version', 'lastblock.height', 'lastblock.height', 'peers.length', 'ports'];
+            const key = columnKeys[columnIndex];
+            nodes.sort((a, b) => {
+                const aValue = key.includes('.') ? eval(`a.${key}`) : a[key];
+                const bValue = key.includes('.') ? eval(`b.${key}`) : b[key];
+                return aValue > bValue ? 1 : -1;
+            });
+            renderNodes(); // Обновляем отображение узлов после сортировки
+        }
+
+        function renderNodes() {
+            const nodeList = document.getElementById('node-list');
+            nodeList.innerHTML = ''; // Очистка списка узлов перед добавлением новых данных
+            
+            let maxHeight = nodes.reduce((max, node) => {
+                return node.lastblock ? Math.max(max, node.lastblock.height) : max;
+            }, 0);
+
+            let maxVersion = nodes.reduce((max, node) => {
+                const version = versionToNumber(node.version);
+                return version > max ? version : max;
+            }, 0);
+
+            nodes.forEach(node => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${node.address}</td>
+                    <td class="${node.version ? versionToNumber(node.version) < maxVersion ? 'old-version' : '' : ''}">${node.version ? node.version : ''}</td>
+                    <td>${node.lastblock ? node.lastblock.height : ''}</td>
+                    <td>${node.lastblock ? Math.round((node.lastblock.height / maxHeight) * 100) + '%' : ''}</td>
+                    <td>${node.peers ? node.peers.length : ''}</td>
+                    <td>${node.ports ? '+' : ''}</td>
+                `;
+                nodeList.appendChild(row);
+            });
+        }
+
+        async function fetchNodes() {
+            try {
+                const response = await fetch('/list_nodes', { method: 'POST' });
+                nodes = await response.json(); // Сохраняем узлы в переменной
+                renderNodes(); // Отображаем узлы
+            } catch (error) {
+                console.error('Ошибка при получении узлов:', error);
+            }
+        }
+
+        // Вызов функции для загрузки узлов при загрузке страницы
+        window.onload = () => {
+            fetchNodes(); // Первоначальный вызов
+            
+            // setInterval(fetchNodes, 10000); // Циклический вызов каждые 10 секунд
+
+            // Добавление обработчиков событий для заголовков
+            document.querySelectorAll('th').forEach((th, index) => {
+                th.addEventListener('click', () => sortNodes(index));
+            });
+        };
+    </script>
+</body>
+</html>
