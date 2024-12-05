@@ -12,22 +12,22 @@ class PeerDiscovery:
     def __init__(self, mongodb_client, initial_peers: List[str]):
         self.db = mongodb_client
         self.initial_peers = initial_peers
+        self.lock = asyncio.Lock()
 
     async def discover(self):
         """Начинает процесс обнаружения пиров и узлов"""
-        lock = asyncio.Lock()
 
         # Создаем и запускаем задачи для обнаружения пиров и узлов
-        peer_discovery_task = asyncio.create_task(self.discover_peers(lock))
-        node_discovery_tasks = [asyncio.create_task(self.discover_nodes(lock, i)) for i in range(1, 11)]
+        peer_discovery_task = asyncio.create_task(self.discover_peers())
+        node_discovery_tasks = [asyncio.create_task(self.discover_nodes(i)) for i in range(1, 11)]
         
         # Ожидаем завершения задач
         await asyncio.gather(peer_discovery_task, *node_discovery_tasks)
 
-    async def discover_peers(self, lock):
+    async def discover_peers(self):
         while True:
             try:
-                async with lock:
+                async with self.lock:
                     known_nodes = await self.load_known_nodes_from_db() or {}
                 for address, node in known_nodes.items():
                     peers = await self.fetch_peers_from_node(node)
@@ -39,21 +39,21 @@ class PeerDiscovery:
                             exist_node = known_nodes[p.address]
                             if (p.synced_blocks or 0) > (exist_node.height or 0):
                                 exist_node.height = p.synced_blocks
-                                async with lock:
+                                async with self.lock:
                                     exist_node.update = int(time.time())
                                     await self.save_node_to_db(exist_node)
                         else:
                             new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(time.time()))
-                            async with lock:
+                            async with self.lock:
                                 await self.save_node_to_db(new_node)
                 await asyncio.sleep(1)
             except Exception as e:
                 log.error(f"Ошибка при сканировании пиров: {e}")
 
-    async def discover_nodes(self, lock, i: int):
+    async def discover_nodes(self, i: int):
         while True:
             try:
-                async with lock:
+                async with self.lock:
                     node = await self.get_oldest_update_node(i)
                 if node:
                     log.info(f"Worker: #{i} Update: {node.update} Node: {node.address}")
