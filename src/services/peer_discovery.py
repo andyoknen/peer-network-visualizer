@@ -12,12 +12,23 @@ class PeerDiscovery:
     def __init__(self, mongodb_client, initial_peers: List[str]):
         self.db = mongodb_client
         self.initial_peers = initial_peers
-        self.lock = asyncio.Lock()
 
-    async def discover_peers(self):
+    async def discover(self):
+        """Начинает процесс обнаружения пиров и узлов"""
+        lock = asyncio.Lock()
+
+        # Создаем и запускаем задачи для обнаружения пиров и узлов
+        peer_discovery_task = asyncio.create_task(self.discover_peers(lock))
+        node_discovery_tasks = [asyncio.create_task(self.discover_nodes(lock, i)) for i in range(1, 11)]
+        
+        # Ожидаем завершения задач
+        await asyncio.gather(peer_discovery_task, *node_discovery_tasks)
+
+    async def discover_peers(self, lock):
         while True:
             try:
-                known_nodes = await self.load_known_nodes_from_db() or {}
+                async with lock:
+                    known_nodes = await self.load_known_nodes_from_db() or {}
                 for address, node in known_nodes.items():
                     peers = await self.fetch_peers_from_node(node)
                     # Сохраняем пир как новый узел, если он не существует в базе данных
@@ -28,22 +39,24 @@ class PeerDiscovery:
                             exist_node = known_nodes[p.address]
                             if (p.synced_blocks or 0) > (exist_node.height or 0):
                                 exist_node.height = p.synced_blocks
-                                async with self.lock:
+                                async with lock:
                                     exist_node.update = int(time.time())
                                     await self.save_node_to_db(exist_node)
                         else:
                             new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(time.time()))
-                            async with self.lock:
+                            async with lock:
                                 await self.save_node_to_db(new_node)
                 await asyncio.sleep(1)
             except Exception as e:
                 log.error(f"Ошибка при сканировании пиров: {e}")
 
-    async def discover_nodes(self, i: int):
+    async def discover_nodes(self, lock, i: int):
         while True:
             try:
-                node = await self.get_oldest_update_node()
+                async with lock:
+                    node = await self.get_oldest_update_node(i)
                 if node:
+                    log.info(f"Worker: #{i} Update: {node.update} Node: {node.address}")
                     node_info = await self.fetch_node_info(node)
                     if node_info:
                         await self.save_node_to_db(node_info)
@@ -55,24 +68,22 @@ class PeerDiscovery:
         """Загрузка известных пиров из базы данных"""
         known_nodes = { peer: Node(peer) for peer in self.initial_peers }
         try:
-            async with self.lock:
-                async for doc in self.db.nodes.find({}):
-                    node = Node.from_dict(doc)
-                    known_nodes[node.address] = node
-                return known_nodes
+            async for doc in self.db.nodes.find({}):
+                node = Node.from_dict(doc)
+                known_nodes[node.address] = node
+            return known_nodes
         except Exception as e:
             log.error(f"Ошибка при загрузке известных пиров из базы данных: {e}")
         return None
 
-    async def get_oldest_update_node(self) -> Optional[Node]:
+    async def get_oldest_update_node(self, i) -> Optional[Node]:
         """Получение самой старой ноды по полю update из базы данных"""
         try:
-            async with self.lock:
-                async for doc in self.db.nodes.find({}).sort("update", 1).limit(1):
-                    node = Node.from_dict(doc)
-                    node.update = int(time.time())
-                    await self.save_node_to_db(node)
-                    return node
+            async for doc in self.db.nodes.find({}).sort("update", 1).limit(1):
+                node = Node.from_dict(doc)
+                node.update = int(time.time())
+                await self.save_node_to_db(node)
+                return node
         except Exception as e:
             log.error(f"Ошибка при получении самой старой ноды из базы данных: {e}")
             return None
@@ -158,6 +169,7 @@ class PeerDiscovery:
                     result['public'] = True
                     result['address'] = node.address
                     result['height'] = result['lastblock']['height']
+                    result['update'] = int(time.time())
                     node_info = Node.from_dict(result)
 
                     log.info(f"Информация об узле {node.address} получена успешно")

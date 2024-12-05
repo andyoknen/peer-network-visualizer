@@ -16,13 +16,9 @@ async def lifespan(app: FastAPI):
     # Инициализация сервисов
     app.state.peer_discovery = PeerDiscovery(mongodb_client[config['mongodb']['database']], config['initial_peers'])
     
-    # Запуск задачи по обнаружению новых узлов в фоне
-    asyncio.create_task(app.state.peer_discovery.discover_peers())
+    # Запуск фонового процесса
+    asyncio.create_task(app.state.peer_discovery.discover())
 
-    # Запуск задачи по сканированию известных узлов в фоне
-    for i in range(15):
-        asyncio.create_task(app.state.peer_discovery.discover_nodes(i))
-    
     yield
     
     # Закрытие подключений при завершении
