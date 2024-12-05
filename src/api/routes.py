@@ -20,8 +20,9 @@ async def post_nodes():
     peers = [ Peer.from_dict(doc) for doc in db.peers.find({}) ]
 
     for node in nodes:
+        node.peers = []
         for peer in peers:
-            if peer.address_node == node.address:
+            if ( peer.address_node if node.public else peer.address ) == node.address:
                 node.peers.append(peer)
 
     # Форматирование списка узлов для возврата в формате JSON

@@ -14,12 +14,14 @@ async def lifespan(app: FastAPI):
     mongodb_client = AsyncIOMotorClient(config['mongodb']['uri'])
     
     # Инициализация сервисов
-    peer_discovery = PeerDiscovery(mongodb_client[config['mongodb']['database']], config['initial_peers'])
+    app.state.peer_discovery = PeerDiscovery(mongodb_client[config['mongodb']['database']], config['initial_peers'])
     
-    # Сохраняем сервисы в состоянии приложения
-    app.state.peer_discovery = peer_discovery
-
+    # Запуск задачи по обнаружению новых узлов в фоне
     asyncio.create_task(app.state.peer_discovery.discover_peers())
+
+    # Запуск задачи по сканированию известных узлов в фоне
+    for i in range(15):
+        asyncio.create_task(app.state.peer_discovery.discover_nodes(i))
     
     yield
     

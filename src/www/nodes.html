@@ -61,7 +61,8 @@
                     <th>Высота <span class="sort-icon" id="sort-height"></span></th>
                     <th>Состояние <span class="sort-icon" id="sort-status"></span></th>
                     <th>Пиры <span class="sort-icon" id="sort-peers"></span></th>
-                    <th>Онлайн <span class="sort-icon" id="sort-ports"></span></th>
+                    <th>Онлайн <span class="sort-icon" id="sort-public"></span></th>
+                    <th>Обновлено <span class="sort-icon" id="sort-updated"></span></th>
                 </tr>
             </thead>
             <tbody id="node-list">
@@ -94,7 +95,7 @@
         }
 
         function sortNodes(columnIndex, changeDirection = true) {
-            const columnKeys = ['index','address', 'version', 'lastblock.height', 'lastblock.height', 'peers.length', 'ports'];
+            const columnKeys = ['index','address', 'version', 'height', 'height', 'peers.length', 'public', 'update'];
             const key = columnKeys[columnIndex];
 
             // Изменяем направление сортировки, если колонка та же
@@ -119,7 +120,7 @@
         function updateStatistics() {
             const statisticsDiv = document.getElementById('statistics');
             const totalNodes = nodes.length;
-            const onlineNodes = nodes.filter(node => node.ports).length; // Пример подсчета онлайн узлов
+            const onlineNodes = nodes.filter(node => node.public).length; // Пример подсчета онлайн узлов
             statisticsDiv.innerHTML = `Всего узлов: ${totalNodes}, Онлайн узлов: ${onlineNodes}`;
         }
 
@@ -128,7 +129,7 @@
             nodeList.innerHTML = ''; // Очистка списка узлов перед добавлением новых данных
 
             let maxHeight = nodes.reduce((max, node) => {
-                return node.lastblock ? Math.max(max, node.lastblock.height) : max;
+                return node.height ? Math.max(max, node.height) : max;
             }, 0);
 
             let maxVersion = nodes.reduce((max, node) => {
@@ -138,15 +139,16 @@
 
             nodes.forEach((node, index) => {
                 const row = document.createElement('tr');
-                row.className = node.version ? versionToNumber(node.version) < maxVersion ? 'old-version' : '' : '';
+                // row.className = node.version ? versionToNumber(node.version) < maxVersion ? 'old-version' : '' : '';
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${node.address}</td>
                     <td>${node.version ? node.version : ''}</td>
-                    <td>${node.lastblock ? node.lastblock.height : ''}</td>
-                    <td>${node.lastblock ? (Math.round(((node.lastblock.height / maxHeight) * 100) * 100) / 100).toFixed(2) + '%' : ''}</td>
-                    <td>${node.peers ? node.peers.length : ''}</td>
-                    <td>${node.ports ? '+' : ''}</td>
+                    <td>${node.height ? node.height : ''}</td>
+                    <td>${node.height ? (Math.round(((node.height / maxHeight) * 100) * 100) / 100).toFixed(2) + '%' : ''}</td>
+                    <td>${node.peers ? node.peers.length : 0}</td>
+                    <td>${node.public ? '✔' : ''}</td>
+                    <td>${timeSince(new Date(node.update * 1000))}</td>
                 `;
                 nodeList.appendChild(row);
             });
@@ -163,6 +165,21 @@
             } catch (error) {
                 console.error('Ошибка при получении узлов:', error);
             }
+        }
+
+        function timeSince(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = Math.floor(seconds / 31536000);
+            if (interval >= 1) return "-";
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) return interval + " мес.";
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) return interval + " дн.";
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) return interval + " час.";
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) return interval + " мин.";
+            return seconds + " сек.";
         }
 
         // Вызов функции для загрузки узлов при загрузке страницы

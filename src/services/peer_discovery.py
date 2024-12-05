@@ -1,8 +1,9 @@
 from typing import List, Optional
-from models.node import Node, LastBlock, Ports
+from models.node import Node
 from models.peer import Peer
 from aiohttp import ClientTimeout, ClientSession
 import asyncio
+import time
 
 import logging
 log = logging.getLogger(__name__)
@@ -10,44 +11,71 @@ log = logging.getLogger(__name__)
 class PeerDiscovery:
     def __init__(self, mongodb_client, initial_peers: List[str]):
         self.db = mongodb_client
-        self.known_peers = {peer: Node(peer) for peer in initial_peers}
+        self.initial_peers = initial_peers
+        self.lock = asyncio.Lock()
 
     async def discover_peers(self):
-        await self.load_known_peers_from_db()
-
         while True:
             try:
-                new_peers = []
+                known_nodes = await self.load_known_nodes_from_db() or {}
+                for address, node in known_nodes.items():
+                    peers = await self.fetch_peers_from_node(node)
+                    # Сохраняем пир как новый узел, если он не существует в базе данных
+                    for p in peers:
+                        # Вставка нового узла в базу данных
+                        if p.address in known_nodes:
+                            # Обновляем информацию узла, если высота пира больше высоты узла
+                            exist_node = known_nodes[p.address]
+                            if (p.synced_blocks or 0) > (exist_node.height or 0):
+                                exist_node.height = p.synced_blocks
+                                async with self.lock:
+                                    exist_node.update = int(time.time())
+                                    await self.save_node_to_db(exist_node)
+                        else:
+                            new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(time.time()))
+                            async with self.lock:
+                                await self.save_node_to_db(new_node)
+                await asyncio.sleep(1)
+            except Exception as e:
+                log.error(f"Ошибка при сканировании пиров: {e}")
 
-                for address, peer in self.known_peers.items():
-                    # Получаем информацию об узле перед поиском новых пиров
-                    node_info = await self.fetch_node_info(peer)
+    async def discover_nodes(self, i: int):
+        while True:
+            try:
+                node = await self.get_oldest_update_node()
+                if node:
+                    node_info = await self.fetch_node_info(node)
                     if node_info:
-                        self.known_peers[address] = node_info
                         await self.save_node_to_db(node_info)
-
-                    # Получаем список пиров от текущего узла
-                    new_peers.extend(await self.fetch_peers_from_node(peer))
-
-                for p in new_peers:
-                    if p.address not in self.known_peers or not self.known_peers[p.address].chain:
-                        self.known_peers[p.address] = p
-                        await self.save_node_to_db(p)
-
-                await asyncio.sleep(300)  # 5 минут
+                await asyncio.sleep(1)
             except Exception as e:
                 log.error(f"Ошибка при сканировании узлов: {e}")
-                await asyncio.sleep(60)  # Ожидание 1 минута при ошибке
 
-    async def load_known_peers_from_db(self):
+    async def load_known_nodes_from_db(self) -> Optional[dict[str, Node]]:
         """Загрузка известных пиров из базы данных"""
+        known_nodes = { peer: Node(peer) for peer in self.initial_peers }
         try:
-            async for doc in self.db.nodes.find({}):
-                node = Node.from_dict(doc)
-                self.known_peers[node.address] = node
-            log.info("Известные пиры успешно загружены из базы данных")
+            async with self.lock:
+                async for doc in self.db.nodes.find({}):
+                    node = Node.from_dict(doc)
+                    known_nodes[node.address] = node
+                return known_nodes
         except Exception as e:
             log.error(f"Ошибка при загрузке известных пиров из базы данных: {e}")
+        return None
+
+    async def get_oldest_update_node(self) -> Optional[Node]:
+        """Получение самой старой ноды по полю update из базы данных"""
+        try:
+            async with self.lock:
+                async for doc in self.db.nodes.find({}).sort("update", 1).limit(1):
+                    node = Node.from_dict(doc)
+                    node.update = int(time.time())
+                    await self.save_node_to_db(node)
+                    return node
+        except Exception as e:
+            log.error(f"Ошибка при получении самой старой ноды из базы данных: {e}")
+            return None
 
     async def save_node_to_db(self, node: Node):
         """Сохранение известного пира в базу данных"""
@@ -74,7 +102,7 @@ class PeerDiscovery:
         except Exception as e:
             log.error(f"Ошибка при сохранении информации о пире {peer.address}: {e}")
 
-    async def fetch_peers_from_node(self, node: Node) -> List[Node]:
+    async def fetch_peers_from_node(self, node: Node) -> List[Peer]:
         """Получение списка пиров от текущего узла"""
         peers = []
 
@@ -97,16 +125,10 @@ class PeerDiscovery:
                         return []
                     
                     for peer_data in data['result']:
-                        peer_new = Peer.from_dict(peer_data)
-                        peer_new.address_node = node.address
-                        await self.save_peer_to_db(node, peer_new)
-
-                        node_new = Node.from_dict(peer_data)
-                        node_new.lastblock = LastBlock()
-                        node_new.lastblock.height = peer_new.synced_blocks
-                        peers.append(node_new)
-
-
+                        peer = Peer.from_dict(peer_data)
+                        peer.address_node = node.address
+                        await self.save_peer_to_db(node, peer)
+                        peers.append(peer)
         except Exception as e:
             log.warning(f"Ошибка при получении пиров от {node.address}: {e}")
 
@@ -133,7 +155,9 @@ class PeerDiscovery:
                         return None
                     
                     result = data['result']
+                    result['public'] = True
                     result['address'] = node.address
+                    result['height'] = result['lastblock']['height']
                     node_info = Node.from_dict(result)
 
                     log.info(f"Информация об узле {node.address} получена успешно")
