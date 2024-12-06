@@ -26,7 +26,7 @@ Pocketnet Node Monitor - это инструмент для отслеживан
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/your-username/pocketnet-node-monitor.git
+git clone https://github.com/andyoknen/peer-network-visualizer.git
 cd pocketnet-node-monitor
 ```
 
@@ -46,8 +46,9 @@ mongodb:
   database: pocketnet_monitor
 
 initial_peers:
-  - "seed1.pocketnet.com"
-  - "seed2.pocketnet.com"
+  - "1.pocketnet.app"
+  - "2.pocketnet.app"
+  - "3.pocketnet.app"
 ```
 
 3. Запустите сервис:
@@ -59,7 +60,7 @@ docker-compose up -d
 
 ### Получение списка активных узлов
 ```http
-GET /api/v1/nodes
+GET /list_nodes
 ```
 
 Ответ:
@@ -77,22 +78,19 @@ GET /api/v1/nodes
 }
 ```
 
-### Получение метрик сети
+### HTML страница
 ```http
-GET /api/v1/metrics
+GET /
 ```
 
-Ответ:
-```json
-{
-  "total_nodes": 100,
-  "active_nodes": 95,
-  "average_block_height": 12345,
-  "version_distribution": {
-    "1.0.0": 80,
-    "0.9.9": 20
-  }
-}
+### HTML страница списка узлов
+```http
+GET /nodes
+```
+
+### HTML страница визуальной карты
+```http
+GET /cloud
 ```
 
 ## Мониторинг
