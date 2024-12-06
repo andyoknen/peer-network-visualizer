@@ -120,23 +120,19 @@ pip install -r requirements.txt
 ```
 pocketnet-node-monitor/
 ├── docker/
-│   ├── Dockerfile
+│   ├── dockerfile
 │   └── docker-compose.yml
+├── config/
+│   └── config.yml
 ├── src/
 │   ├── api/
 │   │   ├── routes.py
-│   │   └── handlers.py
 │   ├── services/
-│   │   ├── node_scanner.py
 │   │   ├── peer_discovery.py
-│   │   └── metrics_collector.py
-│   ├── models/
-│   │   ├── node.py
-│   │   └── metrics.py
-│   └── database/
-│       └── mongodb.py
-├── config/
-│   └── config.yml
+│   │   └── helpers.py
+│   └── models/
+│       ├── node.py
+│       └── peer.py
 └── requirements.txt
 ```
 
