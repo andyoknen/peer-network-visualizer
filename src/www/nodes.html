@@ -1,6 +1,6 @@
-<!-- www/nodes.html -->
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,49 +13,105 @@
             padding: 20px;
             font-size: 0.8em;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             color: #044575;
         }
-        th, td {
+
+        th,
+        td {
             padding: 10px;
             text-align: left;
             border: 1px solid #ddd;
         }
+
         th {
             background-color: #016dbd;
             color: white;
             cursor: pointer;
         }
+
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
+
         tr:hover {
             background-color: #ddd;
         }
+
         .old-version {
             color: #890d0d;
         }
+
         .sort-icon {
             font-size: 1em;
             float: right;
         }
+
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 1000;
+        }
+
+        .post-header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 20em;
+        }
+
+        .search-field {
+            padding: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+        }
+
+        .search-field:focus {
+            outline: none;
+        }
+
+        .search-close {
+            position: absolute;
+            right: 5px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1em;
+            color: #b7b7b7;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <h1>PocketNET Nodes</h1>
     </header>
     <main>
-        <div id="statistics" style="margin-bottom: 20px;"></div>
-            <!-- Здесь будет отображаться статистика узлов -->
+        <div class="post-header-box">
+            <div id="statistics">
+                <div id="stats-text"></div>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Поиск.." oninput="filterNodes()" class="search-field">
+                <button onclick="clearSearch()" class="search-close">✖</button>
+            </div>
         </div>
         <table>
-            <thead>
+            <thead class="sticky-header">
                 <tr>
-                    <th>№ <span class="sort-icon" id="sort-index"></span></th>
+                    <th># <span class="sort-icon" id="sort-index"></span></th>
                     <th>Адрес <span class="sort-icon" id="sort-address"></span></th>
                     <th>Версия <span class="sort-icon" id="sort-version"></span></th>
                     <th>Высота <span class="sort-icon" id="sort-height"></span></th>
@@ -95,7 +151,7 @@
         }
 
         function sortNodes(columnIndex, changeDirection = true) {
-            const columnKeys = ['index','address', 'version', 'height', 'height', 'peers.length', 'public', 'update'];
+            const columnKeys = ['index', 'address', 'version', 'height', 'height', 'peers.length', 'public', 'update'];
             const key = columnKeys[columnIndex];
 
             // Изменяем направление сортировки, если колонка та же
@@ -113,7 +169,7 @@
                 const bValue = key.includes('.') ? eval(`b.${key}`) : b[key];
                 return currentSortDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
             });
-            
+
             updateSortIcons(); // Обновляем иконки сортировки
         }
 
@@ -128,18 +184,24 @@
             const nodeList = document.getElementById('node-list');
             nodeList.innerHTML = ''; // Очистка списка узлов перед добавлением новых данных
 
-            let maxHeight = nodes.reduce((max, node) => {
+            const searchValue = document.getElementById('search-input').value.toLowerCase(); // Получаем значение поиска
+            const filteredNodes = nodes.filter(node => {
+                return Object.values(node).some(value =>
+                    String(value).toLowerCase().includes(searchValue) // Фильтруем узлы по значению поиска
+                );
+            });
+
+            let maxHeight = filteredNodes.reduce((max, node) => {
                 return node.height ? Math.max(max, node.height) : max;
             }, 0);
 
-            let maxVersion = nodes.reduce((max, node) => {
+            let maxVersion = filteredNodes.reduce((max, node) => {
                 const version = versionToNumber(node.version);
                 return version > max ? version : max;
             }, 0);
 
-            nodes.forEach((node, index) => {
+            filteredNodes.forEach((node, index) => {
                 const row = document.createElement('tr');
-                // row.className = node.version ? versionToNumber(node.version) < maxVersion ? 'old-version' : '' : '';
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${node.address}</td>
@@ -152,7 +214,7 @@
                 `;
                 nodeList.appendChild(row);
             });
-            
+
             updateStatistics(); // Обновляем статистику после рендеринга узлов
         }
 
@@ -182,11 +244,37 @@
             return seconds + " сек.";
         }
 
+        function filterNodes() {
+            const searchValue = document.getElementById('search-input').value.toLowerCase();
+            const nodeList = document.getElementById('node-list');
+            const rows = nodeList.getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let rowVisible = false;
+
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].textContent.toLowerCase().includes(searchValue)) {
+                        rowVisible = true;
+                        break;
+                    }
+                }
+
+                rows[i].style.display = rowVisible ? '' : 'none'; // Показываем или скрываем строку
+            }
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.value = ''; // Очищаем поле поиска
+            filterNodes(); // Обновляем отображение узлов
+        }
+
         // Вызов функции для загрузки узлов при загрузке страницы
         window.onload = () => {
             fetchNodes(); // Первоначальный вызов
-            
-            setInterval(fetchNodes, 10000); // Циклический вызов каждые 10 секунд
+
+            setInterval(fetchNodes, 15000); // Циклический вызов каждые 15 секунд
 
             // Добавление обработчиков событий для заголовков
             document.querySelectorAll('th').forEach((th, index) => {
@@ -198,4 +286,5 @@
         };
     </script>
 </body>
+
 </html>
