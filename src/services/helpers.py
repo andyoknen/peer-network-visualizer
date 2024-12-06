@@ -44,9 +44,6 @@ log = logging.getLogger(__name__)
 import yaml
 import sys
 def load_config():
-    config_file = 'config/config.yml'  # По умолчанию используем основной файл конфигурации
-    if '--dev' in sys.argv:  # Проверяем, передан ли аргумент --dev
-        config_file = 'config/config_dev.yml'  # Если да, используем dev файл конфигурации
-    with open(config_file, 'r') as f:
+    with open('config/config.yml', 'r') as f:
         return yaml.safe_load(f)
 config = load_config()
