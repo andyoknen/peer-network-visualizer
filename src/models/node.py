@@ -12,6 +12,7 @@ class Node:
     public: Optional[bool] = None
     update: Optional[int] = None
     peers: Optional[List[Peer]] = None
+    peer_count: Optional[int] = None
 
     def to_dict(self):
         r = {
@@ -21,6 +22,7 @@ class Node:
             "height": self.height,
             "public": self.public,
             "update": self.update,
+            "peer_count": self.peer_count
         }
         if not self.peers is None:
             r['peers'] = [peer.to_dict() for peer in self.peers]
@@ -35,6 +37,7 @@ class Node:
             height = data.get("height"),
             public = data.get("public"),
             update = data.get("update"),
+            peer_count = data.get("peer_count")
         )
     
 

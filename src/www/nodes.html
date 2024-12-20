@@ -208,7 +208,7 @@
                     <td>${node.version ? node.version : ''}</td>
                     <td>${node.height ? node.height : ''}</td>
                     <td>${node.height ? (Math.round(((node.height / maxHeight) * 100) * 100) / 100).toFixed(2) + '%' : ''}</td>
-                    <td>${node.peers ? node.peers.length : 0}</td>
+                    <td>${node.peer_count ? node.peer_count : 0}</td>
                     <td>${node.public ? '✔' : ''}</td>
                     <td>${timeSince(new Date(node.update * 1000))}</td>
                 `;

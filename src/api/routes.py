@@ -12,23 +12,28 @@ router = APIRouter()
 client = MongoClient(config['mongodb']['uri'])
 db = client[config['mongodb']['database']]
 
-@router.post("/list_nodes")
-async def post_nodes():
-    # Получение списка узлов
-    nodes = [ Node.from_dict(doc) for doc in db.nodes.find({}) ]
-    # Получение списка пиров
-    peers = [ Peer.from_dict(doc) for doc in db.peers.find({}) ]
+# Сначала создайте индексы (выполнить один раз при настройке БД):
+db.peers.create_index("address")
+db.peers.create_index("address_node")
 
-    for node in nodes:
-        node.peers = []
-        for peer in peers:
-            if ( peer.address_node if node.public else peer.address ) == node.address:
-                node.peers.append(peer)
+@router.post("/list_nodes")
+async def list_nodes():
+    # Затем используйте простой подсчет для каждого узла
+    nodes = []
+    for doc in db.nodes.find({}):
+        peer_count = db.peers.count_documents({
+            "$or": [
+                {"address": doc["address"]},
+                {"address_node": doc["address"]}
+            ]
+        })
+        doc["peer_count"] = peer_count
+        nodes.append(Node.from_dict(doc))
 
     # Форматирование списка узлов для возврата в формате JSON
     return [node.to_dict() for node in nodes]
 
 @router.get("/nodes")
-async def get_nodes():
+async def nodes():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     return FileResponse(os.path.join(current_dir, "../www/nodes.html"))
