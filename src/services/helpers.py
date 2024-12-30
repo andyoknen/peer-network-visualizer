@@ -4,7 +4,7 @@ from typing import Optional
 # -----------------------------------------------------------------------------------------------
 def ExtractVersion(value: Optional[str] = None):
     if value is None:
-        raise ValueError("value не может быть None")
+        return ""
     
     match = re.search(r'/Satoshi:([^/]+)/', value)
 

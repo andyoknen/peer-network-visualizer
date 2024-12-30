@@ -186,7 +186,7 @@
         }
 
         function sortNodes(columnIndex, changeDirection = true) {
-            const columnKeys = ['index', 'address', 'version', 'height', 'height', 'peers.length', 'public', 'update'];
+            const columnKeys = ['index', 'address', 'version', 'height', 'height', 'peer_count', 'public', 'update'];
             const key = columnKeys[columnIndex];
 
             // Изменяем направление сортировки, если колонка та же
@@ -200,8 +200,8 @@
             }
 
             nodes.sort((a, b) => {
-                let aValue = key.includes('.') ? eval(`a.${key}`) : a[key];
-                let bValue = key.includes('.') ? eval(`b.${key}`) : b[key];
+                let aValue = a[key] || 0;
+                let bValue = b[key] || 0;
                 
                 // Специальная обработка для колонки версий
                 if (key === 'version') {

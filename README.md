@@ -51,9 +51,10 @@ initial_peers:
   - "3.pocketnet.app"
 ```
 
-3. Запустите сервис:
+3. Сборка и запуск контейнера:
 ```bash
-docker-compose up -d
+docker build -t peer-network-visualizer .
+docker run -d --name peer-network-visualizer peer-network-visualizer
 ```
 
 ## API Endpoints
