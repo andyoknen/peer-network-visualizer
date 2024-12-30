@@ -27,8 +27,7 @@ class PeerDiscovery:
     async def discover_peers(self):
         while True:
             try:
-                async with self.lock:
-                    known_nodes = await self.load_known_nodes_from_db() or {}
+                known_nodes = await self.load_known_nodes_from_db() or {}
                 for address, node in known_nodes.items():
                     peers = await self.fetch_peers_from_node(node)
                     # Сохраняем пир как новый узел, если он не существует в базе данных
@@ -39,13 +38,11 @@ class PeerDiscovery:
                             exist_node = known_nodes[p.address]
                             if (p.synced_blocks or 0) > (exist_node.height or 0):
                                 exist_node.height = p.synced_blocks
-                                async with self.lock:
-                                    exist_node.update = int(datetime.now(UTC).timestamp())
-                                    await self.save_node_to_db(exist_node)
+                            exist_node.update = int(datetime.now(UTC).timestamp())
+                            await self.save_node_to_db(exist_node)
                         else:
                             new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(datetime.now(UTC).timestamp()))
-                            async with self.lock:
-                                await self.save_node_to_db(new_node)
+                            await self.save_node_to_db(new_node)
                 await asyncio.sleep(1)
             except Exception as e:
                 log.error(f"Ошибка при сканировании пиров: {e}")
@@ -53,13 +50,14 @@ class PeerDiscovery:
     async def discover_nodes(self, i: int):
         while True:
             try:
-                async with self.lock:
-                    node = await self.get_oldest_update_node(i)
+                node = await self.get_oldest_update_node(i)
                 if node:
                     log.info(f"Worker: #{i} Update: {node.update} Node: {node.address}")
                     node_info = await self.fetch_node_info(node)
                     if node_info:
                         await self.save_node_to_db(node_info)
+                    elif node.update and node.update < int(datetime.now(UTC).timestamp()) - 60 * 15:
+                        await self.delete_node_from_db(node)
                 await asyncio.sleep(1)
             except Exception as e:
                 log.error(f"Ошибка при сканировании узлов: {e}")
@@ -68,9 +66,10 @@ class PeerDiscovery:
         """Загрузка известных пиров из базы данных"""
         known_nodes = { peer: Node(peer) for peer in self.initial_peers }
         try:
-            async for doc in self.db.nodes.find({}):
-                node = Node.from_dict(doc)
-                known_nodes[node.address] = node
+            async with self.lock:
+                async for doc in self.db.nodes.find({}):
+                    node = Node.from_dict(doc)
+                    known_nodes[node.address] = node
             return known_nodes
         except Exception as e:
             log.error(f"Ошибка при загрузке известных пиров из базы данных: {e}")
@@ -79,11 +78,16 @@ class PeerDiscovery:
     async def get_oldest_update_node(self, i) -> Optional[Node]:
         """Получение самой старой ноды по полю update из базы данных"""
         try:
-            async for doc in self.db.nodes.find({}).sort("update", 1).limit(1):
-                node = Node.from_dict(doc)
-                node.update = int(datetime.now(UTC).timestamp())
-                await self.save_node_to_db(node)
-                return node
+            async with self.lock:
+                async for doc in self.db.nodes.find({}).sort("update", 1).limit(1):
+                    node = Node.from_dict(doc)
+                    node.update = int(datetime.now(UTC).timestamp())
+                    await self.db.nodes.update_one(
+                        {"address": node.address},
+                        {"$set": node.to_dict()},
+                        upsert=True
+                    )
+                    return node
         except Exception as e:
             log.error(f"Ошибка при получении самой старой ноды из базы данных: {e}")
             return None
@@ -92,24 +96,26 @@ class PeerDiscovery:
         """Сохранение известного пира в базу данных"""
         address = node.address
         try:
-            await self.db.nodes.update_one(
-                {"address": address},
-                {"$set": node.to_dict()},
-                upsert=True
-            )
-            log.info(f"Узел {address} сохранен в базе данных")
+            async with self.lock:
+                await self.db.nodes.update_one(
+                    {"address": address},
+                    {"$set": node.to_dict()},
+                    upsert=True
+                )
+                log.info(f"Узел {address} сохранен в базе данных")
         except Exception as e:
             log.error(f"Ошибка при сохранении узла {address} в базе данных: {e}")
 
     async def save_peer_to_db(self, node: Node, peer: Peer):
         """Сохранение информации о пирах в базу данных"""
         try:
-            await self.db.peers.update_one(
-                {"address_node": node.address, "address": peer.address},
-                {"$set": peer.to_dict()},
-                upsert=True
-            )
-            log.info(f"Информация о пире {peer.address} сохранена в базе данных")
+            async with self.lock:
+                await self.db.peers.update_one(
+                    {"address_node": node.address, "address": peer.address},
+                    {"$set": peer.to_dict()},
+                    upsert=True
+                )
+                log.info(f"Информация о пире {peer.address} сохранена в базе данных")
         except Exception as e:
             log.error(f"Ошибка при сохранении информации о пире {peer.address}: {e}")
 
@@ -125,7 +131,7 @@ class PeerDiscovery:
                         "method": "getpeerinfo",
                         "params": []
                     },
-                    timeout = ClientTimeout(total=5)
+                    timeout = ClientTimeout(total=10)
                 ) as response:
                     
                     if response.status != 200:
@@ -137,8 +143,9 @@ class PeerDiscovery:
                     
                     # Удаляем всех пиров для текущего узла перед сохранением новых
                     try:
-                        await self.db.peers.delete_many({"address_node": node.address})
-                        log.info(f"Удалены старые записи пиров для узла {node.address}")
+                        async with self.lock:
+                            await self.db.peers.delete_many({"address_node": node.address})
+                            log.info(f"Удалены старые записи пиров для узла {node.address}")
                     except Exception as e:
                         log.error(f"Ошибка при удалении старых записей пиров для узла {node.address}: {e}")
                     
@@ -164,7 +171,7 @@ class PeerDiscovery:
                         "method": "getnodeinfo",
                         "params": []
                     },
-                    timeout = ClientTimeout(total=5)
+                    timeout = ClientTimeout(total=10)
                 ) as response:
                     if response.status != 200:
                         return None
@@ -185,4 +192,21 @@ class PeerDiscovery:
         except Exception as e:
             log.warning(f"Ошибка при получении информации об узле {node.address}: {e}")
             return None
+
+    async def delete_node_from_db(self, node: Node):
+        """Удаление узла из базы данных"""
+        try:
+            async with self.lock:
+                # Удаляем узел
+                result = await self.db.nodes.delete_one({"address": node.address})
+                if result.deleted_count > 0:
+                    log.info(f"Узел {node.address} удален из базы данных")
+            
+                # Удаляем связанные записи пиров
+                peers_result = await self.db.peers.delete_many({"address_node": node.address})
+                if peers_result.deleted_count > 0:
+                    log.info(f"Удалено {peers_result.deleted_count} записей пиров для узла {node.address}")
+                
+        except Exception as e:
+            log.error(f"Ошибка при удалении узла {node.address} из базы данных: {e}")
   

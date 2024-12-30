@@ -39,7 +39,8 @@
         }
 
         tr:hover {
-            background-color: #ddd;
+            background-color: #016dbd;
+            color: white;
         }
 
         .old-version {
@@ -61,14 +62,14 @@
         .post-header-box {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-end;
             margin-bottom: 20px;
         }
 
         .search-box {
             position: relative;
             display: flex;
-            align-items: center;
+            align-items: bottom;
             width: 20em;
         }
 
@@ -93,7 +94,29 @@
         }
 
         .lagging {
-            background-color: #fde2d9 !important
+            background-color: #fde2d9;
+        }
+
+        .version-table {
+            margin-top: 10px;
+            border-collapse: collapse;
+            width: auto;
+        }
+        
+        .version-table td {
+            padding: 2px 10px;
+            font-size: 0.9em;
+            border: 1px solid #ddd;
+        }
+        
+        .version-table tr:first-child td {
+            background-color: #016dbd;
+            color: white;
+            font-weight: bold;
+        }
+
+        .offline {
+            background-color: #ddd;
         }
     </style>
 </head>
@@ -194,9 +217,74 @@
 
         function updateStatistics() {
             const statisticsDiv = document.getElementById('statistics');
-            const totalNodes = nodes.length;
-            const onlineNodes = nodes.filter(node => node.public).length; // Пример подсчета онлайн узлов
-            statisticsDiv.innerHTML = `Всего узлов: ${totalNodes}, Онлайн узлов: ${onlineNodes}`;
+            
+            // Группировка узлов по версиям
+            const versionGroups = {};
+            let totalVersioned = 0;
+            let totalVersionedPublic = 0;
+            
+            nodes.forEach(node => {
+                if (node.version) {
+                    if (!versionGroups[node.version]) {
+                        versionGroups[node.version] = {
+                            total: 0,
+                            public: 0,
+                            heights: [],
+                        };
+                    }
+                    versionGroups[node.version].total += 1;
+                    totalVersioned += 1;
+                    if (node.public) {
+                        versionGroups[node.version].public += 1;
+                        totalVersionedPublic += 1;
+                    }
+                    // Добавляем высоту в массив, только если она существует и не равна -1
+                    if (node.height && node.height !== -1) {
+                        versionGroups[node.version].heights.push(node.height);
+                    }
+                }
+            });
+
+            // Вычисляем статистику по высотам и создаем таблицу
+            const versionsTable = Object.entries(versionGroups)
+                .sort((a, b) => versionToNumber(b[0]) - versionToNumber(a[0]))
+                .map(([version, data]) => {
+                    const heights = data.heights;
+                    const minHeight = heights.length ? Math.min(...heights).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '-';
+                    const maxHeight = heights.length ? Math.max(...heights).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '-';
+                    const avgHeight = heights.length ? 
+                        Math.round(heights.reduce((a, b) => a + b, 0) / heights.length).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '-';
+
+                    return `<tr>
+                        <td>${version}</td>
+                        <td>${data.total}</td>
+                        <td>${data.public}</td>
+                        <td>${minHeight}</td>
+                        <td>${avgHeight}</td>
+                        <td>${maxHeight}</td>
+                    </tr>`;
+                })
+                .join('');
+
+            statisticsDiv.innerHTML = `
+                <table class="version-table">
+                    <tr>
+                        <td>Версия</td>
+                        <td>Всего</td>
+                        <td>Публичных</td>
+                        <td>Мин. выс.</td>
+                        <td>Ср. выс.</td>
+                        <td>Макс. выс.</td>
+                    </tr>
+                    ${versionsTable}
+                    <tr style="background-color: #016dbd; color: white;">
+                        <td>Всего</td>
+                        <td>${totalVersioned}</td>
+                        <td>${totalVersionedPublic}</td>
+                        <td colspan="3"></td>
+                    </tr>
+                </table>
+            `;
         }
 
         function renderNodes() {
@@ -217,8 +305,9 @@
             filteredNodes.forEach((node, index) => {
                 const row = document.createElement('tr');
                 
-                // Добавляем класс lagging если узел отстает более чем на 100 блоков
-                if (node.height && maxHeight - node.height > 100) {
+                if (node.height === -1) {
+                    row.classList.add('offline');
+                } else if (node.height && maxHeight - node.height > 100) {
                     row.classList.add('lagging');
                 }
 
@@ -226,8 +315,8 @@
                     <td>${index + 1}</td>
                     <td>${node.address}</td>
                     <td>${node.version ? node.version : ''}</td>
-                    <td>${node.height ? node.height : ''}</td>
-                    <td>${node.height ? (Math.round(((node.height / maxHeight) * 100) * 100) / 100).toFixed(2) + '%' : ''}</td>
+                    <td>${node.height && node.height !== -1 ? node.height.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '-'}</td>
+                    <td>${node.height && node.height !== -1 ? (Math.round(((node.height / maxHeight) * 100) * 100) / 100).toFixed(2) + '%' : ''}</td>
                     <td>${node.peer_count ? node.peer_count : 0}</td>
                     <td>${node.public ? '✔' : ''}</td>
                     <td>${timeSince(new Date(node.update * 1000))}</td>

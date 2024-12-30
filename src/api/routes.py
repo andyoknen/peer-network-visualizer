@@ -5,7 +5,6 @@ from models.node import Node
 from models.peer import Peer
 from services.helpers import config
 from fastapi.responses import FileResponse
-from datetime import datetime, UTC
 
 router = APIRouter()
 
@@ -19,13 +18,9 @@ db.peers.create_index("address_node")
 
 @router.post("/list_nodes")
 async def list_nodes():
-    # Получаем текущее время в формате Unix timestamp
-    current_time = int(datetime.now(UTC).timestamp())
-    five_minutes_ago = current_time - (5 * 60)  # 5 минут в секундах
-    
     nodes = []
     # Используем Unix timestamp для фильтрации
-    for doc in db.nodes.find({"update": {"$gte": five_minutes_ago}}):
+    for doc in db.nodes.find():
         peer_count = db.peers.count_documents({
             "$or": [
                 {"address": doc["address"]},
