@@ -1,6 +1,7 @@
 services:
 
   node-monitor:
+    restart: unless-stopped
     build: 
       context: ..
       dockerfile: docker/dockerfile
@@ -10,6 +11,7 @@ services:
       - 5000:5000
 
   mongodb:
+    restart: unless-stopped
     image: mongo:4.4
     volumes:
       - mongodb_data:/data/db

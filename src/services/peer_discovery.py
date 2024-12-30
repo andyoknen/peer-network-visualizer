@@ -3,7 +3,7 @@ from models.node import Node
 from models.peer import Peer
 from aiohttp import ClientTimeout, ClientSession
 import asyncio
-import time
+from datetime import datetime, UTC
 
 import logging
 log = logging.getLogger(__name__)
@@ -40,10 +40,10 @@ class PeerDiscovery:
                             if (p.synced_blocks or 0) > (exist_node.height or 0):
                                 exist_node.height = p.synced_blocks
                                 async with self.lock:
-                                    exist_node.update = int(time.time())
+                                    exist_node.update = int(datetime.now(UTC).timestamp())
                                     await self.save_node_to_db(exist_node)
                         else:
-                            new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(time.time()))
+                            new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(datetime.now(UTC).timestamp()))
                             async with self.lock:
                                 await self.save_node_to_db(new_node)
                 await asyncio.sleep(1)
@@ -81,7 +81,7 @@ class PeerDiscovery:
         try:
             async for doc in self.db.nodes.find({}).sort("update", 1).limit(1):
                 node = Node.from_dict(doc)
-                node.update = int(time.time())
+                node.update = int(datetime.now(UTC).timestamp())
                 await self.save_node_to_db(node)
                 return node
         except Exception as e:
@@ -135,6 +135,14 @@ class PeerDiscovery:
                     if not data.get('result'):
                         return []
                     
+                    # Удаляем всех пиров для текущего узла перед сохранением новых
+                    try:
+                        await self.db.peers.delete_many({"address_node": node.address})
+                        log.info(f"Удалены старые записи пиров для узла {node.address}")
+                    except Exception as e:
+                        log.error(f"Ошибка при удалении старых записей пиров для узла {node.address}: {e}")
+                    
+                    # Сохраняем новые пиры
                     for peer_data in data['result']:
                         peer = Peer.from_dict(peer_data)
                         peer.address_node = node.address
@@ -169,7 +177,7 @@ class PeerDiscovery:
                     result['public'] = True
                     result['address'] = node.address
                     result['height'] = result['lastblock']['height']
-                    result['update'] = int(time.time())
+                    result['update'] = int(datetime.now(UTC).timestamp())
                     node_info = Node.from_dict(result)
 
                     log.info(f"Информация об узле {node.address} получена успешно")
