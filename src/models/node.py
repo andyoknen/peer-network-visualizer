@@ -22,10 +22,11 @@ class Node:
             "height": self.height,
             "public": self.public,
             "update": self.update,
-            "peer_count": self.peer_count
         }
         if not self.peers is None:
             r['peers'] = [peer.to_dict() for peer in self.peers]
+        if not self.peer_count is None:
+            r['peer_count'] = self.peer_count
         return r
     
     @classmethod
