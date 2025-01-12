@@ -38,6 +38,7 @@ class PeerDiscovery:
                             exist_node = known_nodes[p.address]
                             if (p.synced_blocks or 0) > (exist_node.height or 0):
                                 exist_node.height = p.synced_blocks
+                            exist_node.version = p.version
                             exist_node.update = int(datetime.now(UTC).timestamp())
                             await self.save_node_to_db(exist_node)
                         else:
