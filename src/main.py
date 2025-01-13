@@ -35,6 +35,6 @@ if __name__ == "__main__":
         app, 
         host=config['fastapi']['host'], 
         port=config['fastapi']['port'],
-        log_level=config['fastapi'].get('log_level', 'info')
+        log_level=config['logging'].get('level', 'info')
     )
     

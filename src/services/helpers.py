@@ -30,20 +30,22 @@ def ExtractIPAddress(value: Optional[str] = None) -> str:
     return value
 
 # -----------------------------------------------------------------------------------------------
-# Настройка логирования
-import logging
-# import os
-# if not os.path.exists('logs'):
-#     os.makedirs('logs')
-# filename='logs/app.log'
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-log = logging.getLogger(__name__)
-
-# -----------------------------------------------------------------------------------------------
 # Загрузка конфигурации
 import yaml
 import sys
 def load_config():
-    with open('config/config.yml', 'r') as f:
+    config_file = 'config/config.dev.yml' if '--dev' in sys.argv else 'config/config.yml'
+    with open(config_file, 'r') as f:
         return yaml.safe_load(f)
 config = load_config()
+
+# -----------------------------------------------------------------------------------------------
+# Настройка логирования
+import logging
+
+log_level = config.get('logging', {}).get('level', 'ERROR').upper()
+logging.basicConfig(
+    level=getattr(logging, log_level),
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+log = logging.getLogger(__name__)
