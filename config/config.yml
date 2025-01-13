@@ -8,7 +8,7 @@ scanner:
   rpc_port: 38081     # порт RPC API
 
 mongodb:
-  uri: mongodb://mongodb:27017
+  uri: mongodb://mongodb.localhost:27017
   database: pocketnet_monitor
 
 initial_peers:

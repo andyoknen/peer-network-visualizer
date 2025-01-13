@@ -40,6 +40,7 @@ class PeerDiscovery:
                                 exist_node.height = p.synced_blocks
                             exist_node.version = p.version
                             exist_node.update = int(datetime.now(UTC).timestamp())
+                            exist_node.fetch = int(datetime.now(UTC).timestamp())
                             await self.save_node_to_db(exist_node)
                         else:
                             new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(datetime.now(UTC).timestamp()))
@@ -80,8 +81,15 @@ class PeerDiscovery:
         """Получение самой старой ноды по полю update из базы данных"""
         try:
             async with self.lock:
-                async for doc in self.db.nodes.find({}).sort("update", 1).limit(1):
-                    return Node.from_dict(doc)
+                async for doc in self.db.nodes.find({}).sort("fetch", 1).limit(1):
+                    node = Node.from_dict(doc)
+                    node.fetch = int(datetime.now(UTC).timestamp())
+                    await self.db.nodes.update_one(
+                        {"address": node.address},
+                        {"$set": node.to_dict()},
+                        upsert=True
+                    )
+                    return node
         except Exception as e:
             log.error(f"Ошибка при получении самой старой ноды из базы данных: {e}")
             return None
@@ -180,6 +188,7 @@ class PeerDiscovery:
                     result['address'] = node.address
                     result['height'] = result['lastblock']['height']
                     result['update'] = int(datetime.now(UTC).timestamp())
+                    result['fetch'] = int(datetime.now(UTC).timestamp())
                     node_info = Node.from_dict(result)
 
                     log.info(f"Информация об узле {node.address} получена успешно")

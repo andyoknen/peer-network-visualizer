@@ -36,7 +36,7 @@ import logging
 # if not os.path.exists('logs'):
 #     os.makedirs('logs')
 # filename='logs/app.log'
-logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------------------------
