@@ -81,7 +81,8 @@
 
         .search-close {
             position: absolute;
-            right: 5px;
+            right: 2px;
+            top: 5px;
             border: none;
             background: transparent;
             cursor: pointer;
@@ -382,6 +383,7 @@
             const searchInput = document.getElementById('search-input');
             searchInput.value = ''; // Очищаем поле поиска
             filterNodes(); // Обновляем отображение узлов
+            renderNodes(); // Обновляем отображение узлов после сортировки
         }
 
         // Вызов функции для загрузки узлов при загрузке страницы

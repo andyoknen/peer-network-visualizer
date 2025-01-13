@@ -30,7 +30,11 @@ app.include_router(router, prefix="")
 
 # Запуск приложения
 if __name__ == "__main__":
-
     # Запуск фоновых сервисов
-    uvicorn.run(app, host=config['fastapi']['host'], port=config['fastapi']['port'])
+    uvicorn.run(
+        app, 
+        host=config['fastapi']['host'], 
+        port=config['fastapi']['port'],
+        log_level=config['fastapi'].get('log_level', 'info')
+    )
     
