@@ -43,7 +43,7 @@ class PeerDiscovery:
                             exist_node.fetch = int(datetime.now(UTC).timestamp())
                             await self.save_node_to_db(exist_node)
                         else:
-                            new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(datetime.now(UTC).timestamp()))
+                            new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, fetch=int(datetime.now(UTC).timestamp()), update=int(datetime.now(UTC).timestamp()))
                             await self.save_node_to_db(new_node)
                 await asyncio.sleep(1)
             except Exception as e:
@@ -58,7 +58,7 @@ class PeerDiscovery:
                     if node_info:
                         log.info(f"Worker: #{i} Update: {node.update} Node: {node.address}")
                         await self.save_node_to_db(node_info)
-                    elif node.update and node.update < (int(datetime.now(UTC).timestamp()) - 60 * 15):
+                    elif node.update and node.update < (int(datetime.now(UTC).timestamp()) - 60 * 60):
                         await self.delete_node_from_db(node)
                 await asyncio.sleep(1)
             except Exception as e:
