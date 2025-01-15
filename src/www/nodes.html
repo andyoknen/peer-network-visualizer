@@ -6,37 +6,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PocketNET Nodes</title>
     <style>
+        :root {
+            --bg-color: #f4f4f4;
+            --text-color: #044575;
+            --header-bg: #016dbd;
+            --header-text: white;
+            --table-border: #cfcfcf;
+            --hover-bg: #016dbd;
+            --hover-text: white;
+            --lagging-bg: #fde2d9;
+            --lagging-hover: #f0704a;
+            --offline-bg: #ddd;
+            --offline-hover: #7c7c7c;
+            --search-close: #016dbd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #b3b3b3;
+            --header-bg: #2c2c2c;
+            --header-text: #c4c4c4;
+            --table-border: #404040;
+            --hover-bg: #404040;
+            --hover-text: #e0e0e0;
+            --lagging-bg: #3d2f2f;
+            --lagging-hover: #4d3939;
+            --offline-bg: #2c2c2c;
+            --offline-hover: #404040;
+            --search-close: #aaaaaa;
+        }
+
         body {
             font-family: monospace, sans-serif;
-            background-color: #f4f4f4;
+            background-color: var(--bg-color);
             margin: 0;
             padding: 20px;
             font-size: 0.8em;
+            color: var(--text-color);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            color: #044575;
+            color: var(--text-color);
         }
 
         th,
         td {
             padding: 10px;
             text-align: left;
-            border: 1px solid #ddd;
+            border: 1px solid var(--table-border);
         }
 
         th {
-            background-color: #016dbd;
-            color: white;
+            background-color: var(--header-bg);
+            color: var(--header-text);
             cursor: pointer;
         }
 
         tr:hover {
-            background-color: #016dbd;
-            color: white;
+            background-color: var(--hover-bg);
+            color: var(--hover-text);
         }
 
         .old-version {
@@ -71,8 +102,10 @@
 
         .search-field {
             padding: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--table-border);
             width: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
 
         .search-field:focus {
@@ -87,7 +120,7 @@
             background: transparent;
             cursor: pointer;
             font-size: 1em;
-            color: #b7b7b7;
+            color: var(--search-close);
         }
 
         .version-table {
@@ -99,31 +132,48 @@
         .version-table td {
             padding: 2px 10px;
             font-size: 0.9em;
-            border: 1px solid #ddd;
+            border: 1px solid var(--table-border);
         }
         
-        .version-table tr:first-child td {
-            background-color: #016dbd;
-            color: white;
+        .version-table tr:first-child td,
+        .version-table tr:last-child td {
+            background-color: var(--header-bg);
+            color: var(--header-text);
             font-weight: bold;
         }
 
         .lagging {
-            background-color: #fde2d9;
+            background-color: var(--lagging-bg);
         }
         
         .lagging:hover {
-            background-color: #f0704a;
+            background-color: var(--lagging-hover);
         }
 
         .offline {
-            background-color: #ddd;
+            background-color: var(--offline-bg);
         }
         
         .offline:hover {
-            background-color: #7c7c7c;
+            background-color: var(--offline-hover);
         }
         
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--header-bg);
+            color: var(--header-text);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 
@@ -159,6 +209,26 @@
             </tbody>
         </table>
     </main>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Тема</button>
+    
+    <footer style="
+        margin-top: 20px;
+        padding: 20px;
+        text-align: center;
+        color: var(--text-color);
+    ">
+        <p>
+            © <script>document.write(new Date().getFullYear())</script> PocketNET Team.
+            <a href="https://www.apache.org/licenses/LICENSE-2.0" style="color: var(--text-color);">
+                Licensed under the Apache License, Version 2.0
+            </a>
+        </p>
+        <p>
+            <a href="https://bastyon.com" style="color: var(--text-color); margin-right: 20px;">Bastyon</a>
+            <a href="https://bastyon.com/blockexplorer" style="color: var(--text-color);">Block Explorer</a>
+        </p>
+    </footer>
+
     <script>
         let nodes = []; // Хранение узлов для сортировки
         let currentSortColumn = 0; // Индекс текущей колонки сортировки
@@ -283,7 +353,7 @@
                         <td>Макс. выс.</td>
                     </tr>
                     ${versionsTable}
-                    <tr style="background-color: #016dbd; color: white;">
+                    <tr class="footer">
                         <td>Всего</td>
                         <td>${totalVersioned}</td>
                         <td>${totalVersionedPublic}</td>
@@ -386,6 +456,19 @@
             renderNodes(); // Обновляем отображение узлов после сортировки
         }
 
+        function toggleTheme() {
+            const body = document.documentElement;
+            const currentTheme = body.getAttribute('data-theme');
+            
+            if (currentTheme === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
         // Вызов функции для загрузки узлов при загрузке страницы
         window.onload = () => {
             fetchNodes(); // Первоначальный вызов
@@ -399,6 +482,12 @@
                     renderNodes(); // Обновляем отображение узлов после сортировки
                 });
             });
+
+            // Восстановление темы
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
         };
     </script>
 </body>
