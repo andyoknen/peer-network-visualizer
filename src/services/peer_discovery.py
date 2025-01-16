@@ -18,53 +18,57 @@ class PeerDiscovery:
         """Начинает процесс обнаружения пиров и узлов"""
 
         # Создаем и запускаем задачи для обнаружения пиров и узлов
-        peer_discovery_task = asyncio.create_task(self.discover_peers())
-        node_discovery_tasks = [asyncio.create_task(self.discover_nodes(i)) for i in range(1, 11)]
+        # peer_discovery_task = asyncio.create_task(self.discover_peers())
+        node_discovery_tasks = [asyncio.create_task(self.worker(i)) for i in range(1, 11)]
         
         # Ожидаем завершения задач
-        await asyncio.gather(peer_discovery_task, *node_discovery_tasks)
+        await asyncio.gather(*node_discovery_tasks)
 
-    async def discover_peers(self):
+    async def worker(self, i: int):
         while True:
+            node = await self.get_oldest_update_node(i)
+            log.info(f"Worker: #{i} Update: {node.update if node else 'None'} Node: {node.address if node else 'None'}")
             try:
-                known_nodes = await self.load_known_nodes_from_db() or {}
-                for address, node in known_nodes.items():
-                    peers = await self.fetch_peers_from_node(node)
-                    # Сохраняем пир как новый узел, если он не существует в базе данных
-                    for p in peers:
-                        # Вставка нового узла в базу данных
-                        if p.address in known_nodes:
-                            # Обновляем информацию узла, если высота пира больше высоты узла
-                            exist_node = known_nodes[p.address]
-                            if (p.synced_blocks or 0) > (exist_node.height or 0):
-                                exist_node.height = p.synced_blocks
-                            exist_node.version = p.version
-                            exist_node.update = int(datetime.now(UTC).timestamp())
-                            exist_node.fetch = int(datetime.now(UTC).timestamp())
-                            await self.save_node_to_db(exist_node)
-                        else:
-                            new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, fetch=int(datetime.now(UTC).timestamp()), update=int(datetime.now(UTC).timestamp()))
-                            await self.save_node_to_db(new_node)
-                await asyncio.sleep(1)
-            except Exception as e:
-                log.error(f"Ошибка при сканировании пиров: {e}")
-
-    async def discover_nodes(self, i: int):
-        while True:
-            try:
-                node = await self.get_oldest_update_node(i)
                 if node:
-                    node_info = await self.fetch_node_info(node)
-                    if node_info:
-                        log.info(f"Worker: #{i} Update: {node.update} Node: {node.address}")
-                        await self.save_node_to_db(node_info)
-                    elif node.update and node.update < (int(datetime.now(UTC).timestamp()) - 60 * 60):
-                        await self.delete_node_from_db(node)
-                await asyncio.sleep(1)
+                    await self.discover_info(node)
+                    await self.discover_peers(node)
+                await asyncio.sleep(5)
             except Exception as e:
-                log.error(f"Ошибка при сканировании узлов: {e}")
+                log.error(f"Ошибка при сканировании узла {node.address if node else 'None'}: {e}")
 
-    async def load_known_nodes_from_db(self) -> Optional[dict[str, Node]]:
+    async def discover_info(self, node: Node):
+        try:
+            node_info = await self.fetch_node_info(node)
+            if node_info:
+                await self.save_node_to_db(node_info)
+            elif node.update and node.update < (int(datetime.now(UTC).timestamp()) - 60 * 30):
+                await self.delete_node_from_db(node)
+        except Exception as e:
+            log.error(f"Ошибка при сканировании узла {node.address}: {e}")
+
+    async def discover_peers(self, node: Node):
+        try:
+            peers = await self.fetch_peers_from_node(node)
+            known_nodes = await self.load_known_nodes_from_db() or {}
+
+            # Сохраняем пир как новый узел, если он не существует в базе данных
+            for p in peers:
+                # Вставка нового узла в базу данных
+                if p.address in known_nodes:
+                    # Обновляем информацию узла, если высота пира больше высоты узла
+                    exist_node = known_nodes[p.address]
+                    if (p.synced_blocks or 0) > (exist_node.height or 0):
+                        exist_node.height = p.synced_blocks
+                    exist_node.version = p.version
+                    exist_node.update = int(datetime.now(UTC).timestamp())
+                    await self.save_node_to_db(exist_node)
+                else:
+                    new_node = Node(address=p.address, height=p.synced_blocks, version=p.version, update=int(datetime.now(UTC).timestamp()))
+                    await self.save_node_to_db(new_node)
+        except Exception as e:
+            log.error(f"Ошибка при сканировании пиров узла {node.address}: {e}")
+
+    async def load_known_nodes_from_db(self) -> dict[str, Node]:
         """Загрузка известных пиров из базы данных"""
         known_nodes = { peer: Node(peer) for peer in self.initial_peers }
         try:
@@ -75,7 +79,7 @@ class PeerDiscovery:
             return known_nodes
         except Exception as e:
             log.error(f"Ошибка при загрузке известных пиров из базы данных: {e}")
-        return None
+        return known_nodes
 
     async def get_oldest_update_node(self, i) -> Optional[Node]:
         """Получение самой старой ноды по полю update из базы данных"""
@@ -83,6 +87,10 @@ class PeerDiscovery:
             async with self.lock:
                 async for doc in self.db.nodes.find({}).sort("fetch", 1).limit(1):
                     node = Node.from_dict(doc)
+                    if not node:
+                        nodes = await self.load_known_nodes_from_db()
+                        node = nodes[list(nodes.keys())[0]]
+
                     node.fetch = int(datetime.now(UTC).timestamp())
                     await self.db.nodes.update_one(
                         {"address": node.address},
@@ -133,7 +141,7 @@ class PeerDiscovery:
                         "method": "getpeerinfo",
                         "params": []
                     },
-                    timeout = ClientTimeout(total=10)
+                    timeout = ClientTimeout(total=5)
                 ) as response:
                     
                     if response.status != 200:
@@ -174,7 +182,7 @@ class PeerDiscovery:
                         "method": "getnodeinfo",
                         "params": []
                     },
-                    timeout = ClientTimeout(total=10)
+                    timeout = ClientTimeout(total=5)
                 ) as response:
                     if response.status != 200:
                         return None
