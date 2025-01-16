@@ -46,7 +46,6 @@ import logging
 log_level = config.get('logging', {}).get('level', 'ERROR').upper()
 logging.basicConfig(
     level=getattr(logging, log_level),
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filename='logs/app.log'
+    format='%(asctime)s - %(levelname)s - %(message)s'
 )
 log = logging.getLogger(__name__)
