@@ -1,0 +1,214 @@
+:root {
+    --bg-color: #f4f4f4;
+    --text-color: #333333;
+    --header-bg: #548895;
+    --header-text: white;
+    --table-border: #cfcfcf;
+    --hover-bg: #548895;
+    --hover-text: white;
+    --lagging-bg: #fde2d9;
+    --lagging-hover: #e4866a;
+    --offline-bg: #ddd;
+    --offline-hover: #7c7c7c;
+    --search-close: #4a4a4a;
+}
+
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --text-color: #b3b3b3;
+    --header-bg: #2c2c2c;
+    --header-text: #c4c4c4;
+    --table-border: #404040;
+    --hover-bg: #404040;
+    --hover-text: #e0e0e0;
+    --lagging-bg: #3d2f2f;
+    --lagging-hover: #4d3939;
+    --offline-bg: #2c2c2c;
+    --offline-hover: #404040;
+    --search-close: #aaaaaa;
+}
+
+body {
+    font-family: monospace, sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 20px;
+    font-size: 0.8em;
+    color: var(--text-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    color: var(--text-color);
+}
+
+table {
+  /* border-collapse: separate; */
+  /* overflow: hidden; */
+}
+
+
+tbody tr:first-child td:first-child { border-top-left-radius: 2px; }
+tbody tr:first-child td:last-child { border-top-right-radius: 2px; }
+
+tbody tr:last-child td:first-child { border-bottom-left-radius: 2px; }
+tbody tr:last-child td:last-child { border-bottom-right-radius: 2px; }
+
+th,
+td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    cursor: pointer;
+}
+
+tr:hover {
+    background-color: var(--hover-bg);
+    color: var(--hover-text);
+}
+
+.sort-icon {
+    font-size: 1em;
+    float: right;
+}
+
+.sticky-header {
+    position: sticky;
+    z-index: 1000;
+    top: 0;
+}
+
+.sticky-header-table {
+    top: 40px;
+}
+
+.post-header-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: bottom;
+    width: 20em;
+}
+
+.search-field {
+    padding: 5px;
+    border: 1px solid var(--table-border);
+    width: 100%;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.search-field:focus {
+    outline: none;
+}
+
+.search-close {
+    position: absolute;
+    right: 2px;
+    top: 5px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1em;
+    color: var(--search-close);
+}
+
+.version-table {
+    margin-top: 10px;
+    border-collapse: collapse;
+    width: auto;
+}
+
+.version-table td {
+    padding: 2px 10px;
+    font-size: 0.9em;
+}
+
+.version-table tr:first-child td,
+.version-table tr:last-child td {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    font-weight: bold;
+}
+
+.lagging {
+    background-color: var(--lagging-bg);
+}
+
+.lagging:hover {
+    background-color: var(--lagging-hover);
+}
+
+.offline {
+    background-color: var(--offline-bg);
+}
+
+.offline:hover {
+    background-color: var(--offline-hover);
+}
+
+.theme-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    opacity: 0.9;
+}
+
+.head-box {
+    display: flex;
+    margin-bottom: 0.5em;
+    color: var(--header-text);
+    background-color: var(--header-bg);
+}
+
+.head-box-item {
+    padding: 5px 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    border-radius: 2px;
+}
+
+.head-box-item a {
+    margin: 0;
+    text-align: center;
+    color: var(--header-text);
+    text-decoration: none;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+}
+
+.head-box-title {
+    font-weight: bold;
+    font-size: 2em;
+}
+
+.head-box-subtitle {
+    font-weight: normal;
+    font-size: 1em;
+    text-decoration: underline;
+}

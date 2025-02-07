@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PocketNet</title>
+    <link rel="stylesheet" href="/css/global.css">
+</head>
+
+<body>
+    <header class="head-box sticky-header">
+        <div class="head-box-item head-box-subtitle"><a href="/nodes">Nodes</a></div>
+        <div class="head-box-item head-box-title"><a href="/moderation">Moderation</a></div>
+    </header>
+    
+    <main>
+        
+    </main>
+
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Тема</button>
+    <script>
+        function toggleTheme() {
+            const body = document.documentElement;
+            const currentTheme = body.getAttribute('data-theme');
+            
+            if (currentTheme === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+    </script>
+        
+    <footer style="
+        margin-top: 20px;
+        padding: 20px;
+        text-align: center;
+        color: var(--text-color);
+    ">
+        <p>
+            © <script>document.write(new Date().getFullYear())</script> PocketNET Team.
+            <a href="https://www.apache.org/licenses/LICENSE-2.0" style="color: var(--text-color);">
+                Licensed under the Apache License, Version 2.0
+            </a>
+        </p>
+        <p>
+            <a href="https://bastyon.com" style="color: var(--text-color); margin-right: 20px;">Bastyon</a>
+            <a href="https://bastyon.com/blockexplorer" style="color: var(--text-color);">Block Explorer</a>
+        </p>
+    </footer>
+
+    <script>
+        window.onload = () => {
+            
+
+            // Восстановление темы
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        };
+    </script>
+
+</body>
+
+</html>
