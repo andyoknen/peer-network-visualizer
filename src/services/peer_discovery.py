@@ -18,7 +18,6 @@ class PeerDiscovery:
         """Начинает процесс обнаружения пиров и узлов"""
 
         # Создаем и запускаем задачи для обнаружения пиров и узлов
-        # peer_discovery_task = asyncio.create_task(self.discover_peers())
         node_discovery_tasks = [asyncio.create_task(self.worker(i)) for i in range(1, 11)]
         
         # Ожидаем завершения задач

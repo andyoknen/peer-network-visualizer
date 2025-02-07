@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PocketNet</title>
-    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="/js/main.js"></script>
 </head>
 
 <body>
@@ -15,25 +16,258 @@
     </header>
     
     <main>
-        
+        <div class="post-header-box">
+            <div id="statistics">
+                <div id="stats-text"></div>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Поиск.." oninput="filterJury()" class="search-field">
+                <button onclick="clearSearch()" class="search-close">✖</button>
+            </div>
+        </div>
+        <table>
+            <thead class="sticky-header sticky-header-table">
+                <tr>
+                    <th># <span class="sort-icon" id="sort-index"></span></th>
+                    <th>ID <span class="sort-icon" id="sort-id"></span></th>
+                    <th>Адрес <span class="sort-icon" id="sort-address"></span></th>
+                    <th>Причина <span class="sort-icon" id="sort-reason"></span></th>
+                    <th>Вердикт <span class="sort-icon" id="sort-verdict"></span></th>
+                </tr>
+            </thead>
+            <tbody id="jury-list">
+                <!-- Здесь будет динамически добавлен список жюри -->
+            </tbody>
+        </table>
+        <div class="pagination">
+            <button onclick="prevPage()" id="prev-page" disabled>Предыдущая</button>
+            <span id="page-info">Страница 1</span>
+            <button onclick="nextPage()" id="next-page">Следующая</button>
+        </div>
     </main>
 
     <button class="theme-toggle" onclick="toggleTheme()">🌓 Тема</button>
     <script>
-        function toggleTheme() {
-            const body = document.documentElement;
-            const currentTheme = body.getAttribute('data-theme');
-            
-            if (currentTheme === 'dark') {
-                body.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
+        let juryList = []; // Хранение списка жюри для сортировки
+        let currentSortColumn = 0;
+        let currentSortDirection = 'desc';
+        let currentPage = 0; // Добавлено определение currentPage
+        const itemsPerPage = 15;
+
+        const reasonDictionary = {
+            '1': 'Эротика/Порно',
+            '2': 'Детская эксплуатация',
+            '3': 'Прямая угроза насилия',
+            '4': 'Нелегальные наркотики',
+            '5': 'Нарушение автроских прав',
+            '6': 'Спам'
+        };
+
+        const verdictDictionary = {
+            '-1': 'В процессе',
+            '0': 'Оправдан',
+            '1': 'Осужден'
+        };
+
+        function updateSortIcons() {
+            const icons = document.querySelectorAll('.sort-icon');
+            icons.forEach(icon => icon.innerHTML = '');
+
+            const currentColumn = currentSortColumn;
+            const sortDirection = currentSortDirection === 'asc' ? '▲' : '▼';
+            if (currentColumn >= 0 && currentColumn < icons.length) {
+                icons[currentColumn].innerHTML = sortDirection;
             }
         }
+
+        function sortJury(columnIndex, changeDirection = true) {
+            const columnKeys = ['index', 'id', 'address', 'reason', 'verdict'];
+            const key = columnKeys[columnIndex];
+
+            if (changeDirection) {
+                if (currentSortColumn === columnIndex) {
+                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSortColumn = columnIndex;
+                    currentSortDirection = 'desc';
+                }
+            }
+
+            juryList.sort((a, b) => {
+                let aValue = a[key] || '';
+                let bValue = b[key] || '';
+                
+                return currentSortDirection === 'asc' ? 
+                    (aValue > bValue ? 1 : -1) : 
+                    (aValue < bValue ? 1 : -1);
+            });
+
+            updateSortIcons();
+        }
+
+        function updateStatistics() {
+            const statisticsDiv = document.getElementById('statistics');
+            
+            const totalJury = juryList.length;
+            
+            const reasonStats = {};
+            
+            juryList.forEach(jury => {
+                if (!reasonStats[jury.reason]) {
+                    reasonStats[jury.reason] = {
+                        '-1': 0,
+                        '0': 0,
+                        '1': 0,
+                        total: 0
+                    };
+                }
+                reasonStats[jury.reason][jury.verdict]++;
+                reasonStats[jury.reason].total++;
+            });
+
+            statisticsDiv.innerHTML = `
+                <table class="version-table">
+                    <tr>
+                        <td>Причина</td>
+                        <td>Всего</td>
+                        <td>В процессе</td>
+                        <td>Оправдан</td>
+                        <td>Осужден</td>
+                    </tr>
+                    ${Object.entries(reasonStats)
+                        .map(([reason, stats]) => `
+                            <tr>
+                                <td>${reasonDictionary[reason] || reason}</td>
+                                <td>${stats.total}</td>
+                                <td>${stats['-1']}</td>
+                                <td>${stats['0']}</td>
+                                <td>${stats['1']}</td>
+                            </tr>
+                        `).join('')}
+                    <tr>
+                        <td><strong>Итого</strong></td>
+                        <td><strong>${totalJury}</strong></td>
+                        <td><strong>${juryList.filter(j => j.verdict === '-1').length}</strong></td>
+                        <td><strong>${juryList.filter(j => j.verdict === '0').length}</strong></td>
+                        <td><strong>${juryList.filter(j => j.verdict === '1').length}</strong></td>
+                    </tr>
+                </table>
+            `;
+        }
+
+        function renderJury() {
+            const juryListElement = document.getElementById('jury-list');
+            juryListElement.innerHTML = '';
+
+            const searchValue = document.getElementById('search-input').value.toLowerCase();
+            const filteredJury = juryList.filter(jury => {
+                return Object.values(jury).some(value =>
+                    String(value).toLowerCase().includes(searchValue)
+                );
+            });
+
+            filteredJury.forEach((jury, index) => {
+                const row = document.createElement('tr');
+                const reasonText = reasonDictionary[jury.reason] || jury.reason;
+                const verdictText = verdictDictionary[jury.verdict] || jury.verdict;
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${jury.id}</td>
+                    <td>${jury.address}</td>
+                    <td>${reasonText}</td>
+                    <td>${verdictText}</td>
+                `;
+                juryListElement.appendChild(row);
+            });
+
+            updateStatistics();
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const pageInfo = document.getElementById('page-info');
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+
+            pageInfo.textContent = `Страница ${currentPage + 1}`;
+            prevButton.disabled = currentPage === 0;
+            nextButton.disabled = juryList.length < itemsPerPage;
+        }
+
+        async function fetchJury() {
+            try {
+                const response = await fetch(`/list_juries`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "page": currentPage,
+                        "limit": itemsPerPage
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.items && Array.isArray(data.items)) {
+                    retryCount = 0; // Сбрасываем счетчик при успешном запросе
+                    juryList = data.items.map(item => ({
+                        index: item.height,
+                        id: item.content_id,
+                        address: item.address,
+                        reason: item.reason,
+                        verdict: item.verdict
+                    }));
+                    sortJury(currentSortColumn, false);
+                    renderJury();
+                }
+            } catch (error) {
+                console.error('Ошибка при получении списка жюри:', error);
+            }
+        }
+
+        function filterJury() {
+            renderJury();
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('search-input');
+            searchInput.value = '';
+            filterJury();
+        }
+
+        function nextPage() {
+            currentPage++;
+            fetchJury();
+            updatePagination();
+        }
+
+        function prevPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                fetchJury();
+                updatePagination();
+            }
+        }
+
+        window.onload = () => {
+            fetchJury();
+            setInterval(fetchJury, 30000);
+
+            document.querySelectorAll('th').forEach((th, index) => {
+                th.addEventListener('click', () => {
+                    sortJury(index);
+                    renderJury();
+                });
+            });
+
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        };
     </script>
-        
+
     <footer style="
         margin-top: 20px;
         padding: 20px;
@@ -51,19 +285,6 @@
             <a href="https://bastyon.com/blockexplorer" style="color: var(--text-color);">Block Explorer</a>
         </p>
     </footer>
-
-    <script>
-        window.onload = () => {
-            
-
-            // Восстановление темы
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-        };
-    </script>
-
 </body>
 
 </html>

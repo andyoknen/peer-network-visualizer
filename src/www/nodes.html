@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PocketNet</title>
-    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="/js/main.js"></script>
 </head>
 
 <body>
@@ -44,20 +45,6 @@
     </main>
 
     <button class="theme-toggle" onclick="toggleTheme()">🌓 Тема</button>
-    <script>
-        function toggleTheme() {
-            const body = document.documentElement;
-            const currentTheme = body.getAttribute('data-theme');
-            
-            if (currentTheme === 'dark') {
-                body.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-            }
-        }
-    </script>
         
     <footer style="
         margin-top: 20px;
@@ -308,7 +295,7 @@
         window.onload = () => {
             fetchNodes(); // Первоначальный вызов
 
-            //setInterval(fetchNodes, 15000); // Циклический вызов каждые 15 секунд
+            setInterval(fetchNodes, 15000); // Циклический вызов каждые 15 секунд
 
             // Добавление обработчиков событий для заголовков
             document.querySelectorAll('th').forEach((th, index) => {
@@ -317,12 +304,6 @@
                     renderNodes(); // Обновляем отображение узлов после сортировки
                 });
             });
-
-            // Восстановление темы
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
         };
     </script>
 </body>

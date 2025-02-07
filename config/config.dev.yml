@@ -1,6 +1,6 @@
 fastapi:
   host: 0.0.0.0
-  port: 5000
+  port: 5010
 scanner:
   scan_interval: 300  # интервал сканирования в секундах
   timeout: 5          # таймаут подключения
