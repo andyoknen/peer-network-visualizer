@@ -3,6 +3,7 @@
     --text-color: #333333;
     --header-bg: #548895;
     --header-text: white;
+    --header-subtitle: #a9d5cc;
     --table-border: #cfcfcf;
     --hover-bg: #548895;
     --hover-text: white;
@@ -18,6 +19,7 @@
     --text-color: #b3b3b3;
     --header-bg: #2c2c2c;
     --header-text: #c4c4c4;
+    --header-subtitle: #707070;
     --table-border: #404040;
     --hover-bg: #404040;
     --hover-text: #e0e0e0;
@@ -88,7 +90,7 @@ tr:hover {
 }
 
 .sticky-header-table {
-    top: 40px;
+    top: 65px;
 }
 
 .post-header-box {
@@ -185,6 +187,7 @@ tr:hover {
     color: var(--header-text);
     background-color: var(--header-bg);
     border-radius: 2px;
+    padding: 10px 10px;
 }
 
 .head-box-item {
@@ -194,27 +197,27 @@ tr:hover {
     justify-content: center;
     align-items: flex-end;
     border-radius: 2px;
+    font-size: 2em;
 }
 
 .head-box-item a {
     margin: 0;
-    text-align: center;
+    /* text-align: center; */
     color: var(--header-text);
     text-decoration: none;
-    display: flex;
-    height: 100%;
-    flex-direction: column;
+    /* display: flex; */
+    /* height: 100%; */
+    /* flex-direction: column; */
+    /* font-size: 2em; */
 }
 
-.head-box-title {
+.head-box-title a {
     font-weight: bold;
-    font-size: 2em;
 }
 
-.head-box-subtitle {
+.head-box-subtitle a {
     font-weight: normal;
-    font-size: 1em;
-    text-decoration: underline;
+    color: var(--header-subtitle);
 }
 
 .pagination {

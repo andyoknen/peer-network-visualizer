@@ -15,11 +15,11 @@ async def lifespan(app: FastAPI):
     mongodb_client = AsyncIOMotorClient(config['mongodb']['uri'])
 
     # Инициализация сервисов
-    # app.state.peer_discovery = PeerDiscovery(mongodb_client[config['mongodb']['database']], config['initial_peers'])
+    app.state.peer_discovery = PeerDiscovery(mongodb_client[config['mongodb']['database']], config['initial_peers'])
     app.state.jury_discovery = JuryDiscovery(mongodb_client[config['mongodb']['database']])
     
     # Запуск фоновых процессов
-    # asyncio.create_task(app.state.peer_discovery.discover())
+    asyncio.create_task(app.state.peer_discovery.discover())
     asyncio.create_task(app.state.jury_discovery.discover())
 
     yield
