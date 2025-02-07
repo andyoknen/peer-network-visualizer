@@ -7,6 +7,7 @@ from models.jury import Jury
 from services.helpers import config
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from typing import ClassVar
 
 router = APIRouter()
 
@@ -47,32 +48,15 @@ async def list_nodes(request: ListNodesRequest = Body(default=None)):
     return [node.to_dict() for node in nodes]
 
 class ListJuriesRequest(BaseModel):
-    from enum import Enum
-
-    class SortColumn(str, Enum):
-        height = "height"
-        content_id = "content_id" 
-        address = "address"
-        reason = "reason"
-        verdict = "verdict"
-
-    class SortDirection(str, Enum):
-        asc = "asc"
-        desc = "desc"
-
     page: int = 0
     limit: int = 10
-    sort_column: SortColumn = SortColumn.height
-    sort_direction: SortDirection = SortDirection.desc
+    desc: bool = True
 
 @router.post("/list_juries")
 async def list_juries(request: ListJuriesRequest = Body(default=None)):
     skip = request.page * request.limit
     
-    sort_field = request.sort_column.value
-    sort_direction = 1 if request.sort_direction == ListJuriesRequest.SortDirection.asc else -1
-    
-    cursor = db.juries.find().sort(sort_field, sort_direction).skip(skip).limit(request.limit)
+    cursor = db.juries.find().sort("height", -1 if request.desc else 1).skip(skip).limit(request.limit)
     juries = []
     
     for jury in cursor:

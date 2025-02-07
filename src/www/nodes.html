@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PocketNet</title>
     <link rel="stylesheet" href="/css/main.css">
-    <script src="/js/main.js"></script>
 </head>
 
 <body>
@@ -292,7 +291,7 @@
         }
 
         // Вызов функции для загрузки узлов при загрузке страницы
-        window.onload = () => {
+        function window_onload() {
             fetchNodes(); // Первоначальный вызов
 
             setInterval(fetchNodes, 15000); // Циклический вызов каждые 15 секунд
@@ -306,6 +305,8 @@
             });
         };
     </script>
+
+    <script src="/js/main.js"></script>
 </body>
 
 </html>

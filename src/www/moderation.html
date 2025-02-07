@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PocketNet</title>
     <link rel="stylesheet" href="/css/main.css">
-    <script src="/js/main.js"></script>
 </head>
 
 <body>
@@ -20,37 +19,49 @@
             <div id="statistics">
                 <div id="stats-text"></div>
             </div>
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Поиск.." oninput="filterJury()" class="search-field">
-                <button onclick="clearSearch()" class="search-close">✖</button>
-            </div>
         </div>
         <table>
             <thead class="sticky-header sticky-header-table">
                 <tr>
-                    <th># <span class="sort-icon" id="sort-index"></span></th>
-                    <th>ID <span class="sort-icon" id="sort-id"></span></th>
-                    <th>Адрес <span class="sort-icon" id="sort-address"></span></th>
-                    <th>Причина <span class="sort-icon" id="sort-reason"></span></th>
-                    <th>Вердикт <span class="sort-icon" id="sort-verdict"></span></th>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Адрес</th>
+                    <th>Высота</th>
+                    <th>Причина</th>
+                    <th>Вердикт</th>
                 </tr>
             </thead>
             <tbody id="jury-list">
                 <!-- Здесь будет динамически добавлен список жюри -->
             </tbody>
         </table>
-        <div class="pagination">
-            <button onclick="prevPage()" id="prev-page" disabled>Предыдущая</button>
-            <span id="page-info">Страница 1</span>
-            <button onclick="nextPage()" id="next-page">Следующая</button>
+        <div class="pagination" id="pagination">
+            <!-- Кнопки страниц будут добавлены здесь динамически -->
         </div>
     </main>
 
     <button class="theme-toggle" onclick="toggleTheme()">🌓 Тема</button>
+    
+    <footer style="
+        margin-top: 20px;
+        padding: 20px;
+        text-align: center;
+        color: var(--text-color);
+    ">
+        <p>
+            © <script>document.write(new Date().getFullYear())</script> PocketNET Team.
+            <a href="https://www.apache.org/licenses/LICENSE-2.0" style="color: var(--text-color);">
+                Licensed under the Apache License, Version 2.0
+            </a>
+        </p>
+        <p>
+            <a href="https://bastyon.com" style="color: var(--text-color); margin-right: 20px;">Bastyon</a>
+            <a href="https://bastyon.com/blockexplorer" style="color: var(--text-color);">Block Explorer</a>
+        </p>
+    </footer>
+
     <script>
-        let juryList = []; // Хранение списка жюри для сортировки
-        let currentSortColumn = 0;
-        let currentSortDirection = 'desc';
+        let juryList = {}; // Хранение списка жюри для сортировки
         let currentPage = 0; // Добавлено определение currentPage
         const itemsPerPage = 15;
 
@@ -69,129 +80,99 @@
             '1': 'Осужден'
         };
 
-        function updateSortIcons() {
-            const icons = document.querySelectorAll('.sort-icon');
-            icons.forEach(icon => icon.innerHTML = '');
-
-            const currentColumn = currentSortColumn;
-            const sortDirection = currentSortDirection === 'asc' ? '▲' : '▼';
-            if (currentColumn >= 0 && currentColumn < icons.length) {
-                icons[currentColumn].innerHTML = sortDirection;
-            }
-        }
-
-        function sortJury(columnIndex, changeDirection = true) {
-            const columnKeys = ['index', 'id', 'address', 'reason', 'verdict'];
-            const key = columnKeys[columnIndex];
-
-            if (changeDirection) {
-                if (currentSortColumn === columnIndex) {
-                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    currentSortColumn = columnIndex;
-                    currentSortDirection = 'desc';
-                }
-            }
-
-            juryList.sort((a, b) => {
-                let aValue = a[key] || '';
-                let bValue = b[key] || '';
-                
-                return currentSortDirection === 'asc' ? 
-                    (aValue > bValue ? 1 : -1) : 
-                    (aValue < bValue ? 1 : -1);
-            });
-
-            updateSortIcons();
-        }
-
-        function updateStatistics() {
-            const statisticsDiv = document.getElementById('statistics');
-            
-            const totalJury = juryList.length;
-            
-            const reasonStats = {};
-            
-            juryList.forEach(jury => {
-                if (!reasonStats[jury.reason]) {
-                    reasonStats[jury.reason] = {
-                        '-1': 0,
-                        '0': 0,
-                        '1': 0,
-                        total: 0
-                    };
-                }
-                reasonStats[jury.reason][jury.verdict]++;
-                reasonStats[jury.reason].total++;
-            });
-
-            statisticsDiv.innerHTML = `
-                <table class="version-table">
-                    <tr>
-                        <td>Причина</td>
-                        <td>Всего</td>
-                        <td>В процессе</td>
-                        <td>Оправдан</td>
-                        <td>Осужден</td>
-                    </tr>
-                    ${Object.entries(reasonStats)
-                        .map(([reason, stats]) => `
-                            <tr>
-                                <td>${reasonDictionary[reason] || reason}</td>
-                                <td>${stats.total}</td>
-                                <td>${stats['-1']}</td>
-                                <td>${stats['0']}</td>
-                                <td>${stats['1']}</td>
-                            </tr>
-                        `).join('')}
-                    <tr>
-                        <td><strong>Итого</strong></td>
-                        <td><strong>${totalJury}</strong></td>
-                        <td><strong>${juryList.filter(j => j.verdict === '-1').length}</strong></td>
-                        <td><strong>${juryList.filter(j => j.verdict === '0').length}</strong></td>
-                        <td><strong>${juryList.filter(j => j.verdict === '1').length}</strong></td>
-                    </tr>
-                </table>
-            `;
-        }
-
         function renderJury() {
             const juryListElement = document.getElementById('jury-list');
             juryListElement.innerHTML = '';
 
-            const searchValue = document.getElementById('search-input').value.toLowerCase();
-            const filteredJury = juryList.filter(jury => {
-                return Object.values(jury).some(value =>
-                    String(value).toLowerCase().includes(searchValue)
-                );
-            });
-
-            filteredJury.forEach((jury, index) => {
+            juryList.items.forEach((jury, index) => {
                 const row = document.createElement('tr');
                 const reasonText = reasonDictionary[jury.reason] || jury.reason;
                 const verdictText = verdictDictionary[jury.verdict] || jury.verdict;
+                const globalIndex = currentPage * itemsPerPage + index + 1;
                 row.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${globalIndex}</td>
                     <td>${jury.id}</td>
                     <td>${jury.address}</td>
+                    <td>${jury.height}</td>
                     <td>${reasonText}</td>
                     <td>${verdictText}</td>
                 `;
                 juryListElement.appendChild(row);
             });
 
-            updateStatistics();
+            // Добавляем пустые строки, если элементов меньше itemsPerPage
+            const remainingRows = itemsPerPage - juryList.items.length;
+            for (let i = 0; i < remainingRows; i++) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                `;
+                juryListElement.appendChild(emptyRow);
+            }
+
             updatePagination();
         }
 
         function updatePagination() {
-            const pageInfo = document.getElementById('page-info');
-            const prevButton = document.getElementById('prev-page');
-            const nextButton = document.getElementById('next-page');
+            const paginationElement = document.getElementById('pagination');
+            paginationElement.innerHTML = '';
 
-            pageInfo.textContent = `Страница ${currentPage + 1}`;
-            prevButton.disabled = currentPage === 0;
-            nextButton.disabled = juryList.length < itemsPerPage;
+            const totalPages = Math.ceil(juryList.total / itemsPerPage);
+            // Определяем количество цифр в общем числе страниц
+            const totalDigits = totalPages.toString().length;
+            // Форматируем текущую страницу с ведущими нулями
+            const formattedCurrentPage = (currentPage + 1).toString().padStart(totalDigits, '0');
+
+            // Кнопка в начало "<<"
+            const firstPageButton = document.createElement('button');
+            firstPageButton.textContent = '<<';
+            firstPageButton.disabled = currentPage === 0;
+            firstPageButton.onclick = () => {
+                currentPage = 0;
+                fetchJury();
+            };
+            paginationElement.appendChild(firstPageButton);
+
+            // Кнопка назад "<"
+            const prevPageButton = document.createElement('button');
+            prevPageButton.textContent = '<';
+            prevPageButton.disabled = currentPage === 0;
+            prevPageButton.onclick = () => {
+                currentPage = Math.max(0, currentPage - 1);
+                fetchJury();
+            };
+            paginationElement.appendChild(prevPageButton);
+
+            // Показываем текущую страницу из общего количества
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = ` ${formattedCurrentPage} из ${totalPages} `;
+            pageInfo.style.margin = '0 10px';
+            paginationElement.appendChild(pageInfo);
+
+            // Кнопка вперед ">"
+            const nextPageButton = document.createElement('button');
+            nextPageButton.textContent = '>';
+            nextPageButton.disabled = currentPage >= totalPages - 1;
+            nextPageButton.onclick = () => {
+                currentPage = Math.min(totalPages - 1, currentPage + 1);
+                fetchJury();
+            };
+            paginationElement.appendChild(nextPageButton);
+
+            // Кнопка в конец ">>"
+            const lastPageButton = document.createElement('button');
+            lastPageButton.textContent = '>>';
+            lastPageButton.disabled = currentPage >= totalPages - 1;
+            lastPageButton.onclick = () => {
+                currentPage = totalPages - 1;
+                fetchJury();
+            };
+            paginationElement.appendChild(lastPageButton);
         }
 
         async function fetchJury() {
@@ -203,88 +184,24 @@
                     },
                     body: JSON.stringify({
                         "page": currentPage,
-                        "limit": itemsPerPage
+                        "limit": itemsPerPage,
                     })
                 });
                 
-                const data = await response.json();
-                
-                if (data.items && Array.isArray(data.items)) {
-                    retryCount = 0; // Сбрасываем счетчик при успешном запросе
-                    juryList = data.items.map(item => ({
-                        index: item.height,
-                        id: item.content_id,
-                        address: item.address,
-                        reason: item.reason,
-                        verdict: item.verdict
-                    }));
-                    sortJury(currentSortColumn, false);
-                    renderJury();
-                }
+                juryList = await response.json();
+                renderJury();
             } catch (error) {
                 console.error('Ошибка при получении списка жюри:', error);
             }
         }
 
-        function filterJury() {
-            renderJury();
-        }
-
-        function clearSearch() {
-            const searchInput = document.getElementById('search-input');
-            searchInput.value = '';
-            filterJury();
-        }
-
-        function nextPage() {
-            currentPage++;
-            fetchJury();
-            updatePagination();
-        }
-
-        function prevPage() {
-            if (currentPage > 0) {
-                currentPage--;
-                fetchJury();
-                updatePagination();
-            }
-        }
-
-        window.onload = () => {
+        function window_onload() {
             fetchJury();
             setInterval(fetchJury, 30000);
-
-            document.querySelectorAll('th').forEach((th, index) => {
-                th.addEventListener('click', () => {
-                    sortJury(index);
-                    renderJury();
-                });
-            });
-
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
         };
     </script>
 
-    <footer style="
-        margin-top: 20px;
-        padding: 20px;
-        text-align: center;
-        color: var(--text-color);
-    ">
-        <p>
-            © <script>document.write(new Date().getFullYear())</script> PocketNET Team.
-            <a href="https://www.apache.org/licenses/LICENSE-2.0" style="color: var(--text-color);">
-                Licensed under the Apache License, Version 2.0
-            </a>
-        </p>
-        <p>
-            <a href="https://bastyon.com" style="color: var(--text-color); margin-right: 20px;">Bastyon</a>
-            <a href="https://bastyon.com/blockexplorer" style="color: var(--text-color);">Block Explorer</a>
-        </p>
-    </footer>
+    <script src="/js/main.js"></script>
 </body>
 
 </html>

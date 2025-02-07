@@ -4,6 +4,10 @@ window.onload = () => {
     if (savedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
     }
+
+    if (window_onload) {
+        window_onload();
+    }
 };
 
 function toggleTheme() {

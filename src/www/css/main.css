@@ -50,8 +50,10 @@ table {
 }
 
 
-tbody tr:first-child td:first-child { border-top-left-radius: 2px; }
-tbody tr:first-child td:last-child { border-top-right-radius: 2px; }
+tbody tr:first-child td:first-child,
+thead tr:first-child th:first-child { border-top-left-radius: 2px; }
+tbody tr:first-child td:last-child,
+thead tr:first-child th:last-child { border-top-right-radius: 2px; }
 
 tbody tr:last-child td:first-child { border-bottom-left-radius: 2px; }
 tbody tr:last-child td:last-child { border-bottom-right-radius: 2px; }
@@ -182,6 +184,7 @@ tr:hover {
     margin-bottom: 0.5em;
     color: var(--header-text);
     background-color: var(--header-bg);
+    border-radius: 2px;
 }
 
 .head-box-item {
@@ -212,4 +215,20 @@ tr:hover {
     font-weight: normal;
     font-size: 1em;
     text-decoration: underline;
+}
+
+.pagination {
+    margin-top: 5px;
+    text-align: center;
+}
+
+.pagination button {
+    min-width: 30px;
+    margin: 0px 1px 0px 0px;
+    padding: 3px 5px;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    border: 1px solid var(--header-bg);
+    cursor: default;
+    border-radius: 3px;
 }
