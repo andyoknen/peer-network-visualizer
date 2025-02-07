@@ -1,6 +1,6 @@
 from typing import List, Optional
 from models.node import Node
-from models.peer import Peer
+from models.jury import Jury
 from aiohttp import ClientTimeout, ClientSession
 import asyncio
 import time
@@ -22,10 +22,10 @@ class JuryDiscovery:
 
         # Создаем и запускаем задачи для обнаружения пиров и узлов
         discover_new_juries_tasks = asyncio.create_task(self.discover_new_juries())
-        discover_details_tasks = asyncio.create_task(self.discover_details_tasks())
+        discover_verdict_tasks = asyncio.create_task(self.discover_verdict_tasks())
         
         # Ожидаем завершения задач
-        await asyncio.gather(discover_new_juries_tasks, discover_details_tasks)
+        await asyncio.gather(discover_new_juries_tasks, discover_verdict_tasks)
 
     """Получение новых жюри"""
     async def discover_new_juries(self):
@@ -70,12 +70,18 @@ class JuryDiscovery:
                                     if 'height' not in jury or jury['height'] is None:
                                         continue
                                     
+                                    j = Jury.from_dict(jury)
+                                    
                                     log.info(f"Добавление нового жюри: {jury}")
                                     await self.db.juries.update_one(
                                         {"id": jury["id"]},
-                                        {"$set": jury},
+                                        {"$set": j.to_dict()},
                                         upsert=True
                                     )
+
+                                    # Get details
+                                    await self.discover_details(j)
+
                                 # 3.1 Ждем 0.1 секунду перед следующей итерацией
                                 await asyncio.sleep(0.1)
                             else:
@@ -87,7 +93,7 @@ class JuryDiscovery:
                 await asyncio.sleep(10)
     
     """Получение деталей жюри"""
-    async def discover_details_tasks(self):
+    async def discover_verdict_tasks(self):
         while not self.exit:
             try:
                 # Получаем жюри с вердиктом -1 и минимальным количеством проверок
@@ -130,6 +136,15 @@ class JuryDiscovery:
 
                 await asyncio.sleep(10)
 
+            except Exception as e:
+                log.error(f"Ошибка при получении деталей жюри: {e}")
+                await asyncio.sleep(10)
+
+    """Получение деталей жюри"""
+    async def discover_details(self, jury: Jury):
+        while not self.exit:
+            try:
+                pass
             except Exception as e:
                 log.error(f"Ошибка при получении деталей жюри: {e}")
                 await asyncio.sleep(10)
