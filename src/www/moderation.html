@@ -38,6 +38,12 @@
         </table>
         <div class="pagination" id="pagination">
             <!-- Кнопки страниц будут добавлены здесь динамически -->
+            <select id="itemsPerPageSelect" style="margin-left: 15px;">
+                <option value="15">15 строк</option>
+                <option value="30">30 строк</option>
+                <option value="50">50 строк</option>
+                <option value="100">100 строк</option>
+            </select>
         </div>
     </main>
 
@@ -64,7 +70,7 @@
     <script>
         let juryList = {}; // Хранение списка жюри для сортировки
         let currentPage = 0; // Добавлено определение currentPage
-        const itemsPerPage = 15;
+        let itemsPerPage = parseInt(localStorage.getItem('itemsPerPage')) || 15;
 
         const reasonDictionary = {
             '1': 'Эротика/Порно',
@@ -100,21 +106,6 @@
                 `;
                 juryListElement.appendChild(row);
             });
-
-            // Добавляем пустые строки, если элементов меньше itemsPerPage
-            const remainingRows = itemsPerPage - juryList.items.length;
-            for (let i = 0; i < remainingRows; i++) {
-                const emptyRow = document.createElement('tr');
-                emptyRow.innerHTML = `
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                `;
-                juryListElement.appendChild(emptyRow);
-            }
 
             updatePagination();
         }
@@ -174,6 +165,27 @@
                 fetchJury();
             };
             paginationElement.appendChild(lastPageButton);
+
+            // Восстанавливаем выбранное значение в select
+            const itemsPerPageSelect = document.createElement('select');
+            itemsPerPageSelect.id = 'itemsPerPageSelect';
+            itemsPerPageSelect.style.marginLeft = '15px';
+            [15, 30, 50, 100].forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = `${value} строк`;
+                option.selected = value === itemsPerPage;
+                itemsPerPageSelect.appendChild(option);
+            });
+            
+            itemsPerPageSelect.onchange = (e) => {
+                itemsPerPage = parseInt(e.target.value);
+                localStorage.setItem('itemsPerPage', itemsPerPage);
+                currentPage = 0;
+                fetchJury();
+            };
+            
+            paginationElement.appendChild(itemsPerPageSelect);
         }
 
         async function fetchJury() {
@@ -198,7 +210,7 @@
 
         function window_onload() {
             fetchJury();
-            setInterval(fetchJury, 30000);
+            // setInterval(fetchJury, 30000);
         };
     </script>
 

@@ -226,12 +226,24 @@ tr:hover {
 }
 
 .pagination button {
-    min-width: 30px;
-    margin: 0px 1px 0px 0px;
+    min-width: 50px;
+    min-height: 35px;
+    margin: 0px 2px 0px 0px;
     padding: 3px 5px;
     background-color: var(--header-bg);
     color: var(--header-text);
     border: 1px solid var(--header-bg);
     cursor: default;
     border-radius: 3px;
+    font-weight: bold;
+}
+
+.pagination select {
+    height: 35px;
+    padding: 0px 10px;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    border: 1px solid var(--header-bg);
+    border-radius: 3px;
+    border-right: 12px solid transparent;
 }
