@@ -20,6 +20,20 @@
             <div id="statistics">
                 <div id="stats-text"></div>
             </div>
+            <div class="filter-box" style="margin: 15px 0;">
+                <label style="margin-right: 15px;">
+                    <input type="radio" name="verdict-filter" value="-2" checked> Все
+                </label>
+                <label style="margin-right: 15px;">
+                    <input type="radio" name="verdict-filter" value="-1"> В процессе
+                </label>
+                <label style="margin-right: 15px;">
+                    <input type="radio" name="verdict-filter" value="0"> Оправдан
+                </label>
+                <label style="margin-right: 15px;">
+                    <input type="radio" name="verdict-filter" value="1"> Осужден
+                </label>
+            </div>
         </div>
         <table>
             <thead class="sticky-header sticky-header-table">
@@ -38,7 +52,7 @@
         </table>
         <div class="pagination" id="pagination">
             <!-- Кнопки страниц будут добавлены здесь динамически -->
-            <select id="itemsPerPageSelect" style="margin-left: 15px;">
+            <select id="itemsPerPageSelect" style="margin-left: 15px; visibility: hidden;">
                 <option value="15">15 строк</option>
                 <option value="30">30 строк</option>
                 <option value="50">50 строк</option>
@@ -68,9 +82,10 @@
     </footer>
 
     <script>
-        let juryList = {}; // Хранение списка жюри для сортировки
-        let currentPage = 0; // Добавлено определение currentPage
+        let juryList = {};
+        let currentPage = 0;
         let itemsPerPage = parseInt(localStorage.getItem('itemsPerPage')) || 15;
+        let currentFilter = '-2';
 
         const reasonDictionary = {
             '1': 'Эротика/Порно',
@@ -170,6 +185,7 @@
             const itemsPerPageSelect = document.createElement('select');
             itemsPerPageSelect.id = 'itemsPerPageSelect';
             itemsPerPageSelect.style.marginLeft = '15px';
+            itemsPerPageSelect.style.visibility = 'hidden';
             [15, 30, 50, 100].forEach(value => {
                 const option = document.createElement('option');
                 option.value = value;
@@ -198,6 +214,7 @@
                     body: JSON.stringify({
                         "page": currentPage,
                         "limit": itemsPerPage,
+                        "verdict": parseInt(currentFilter)
                     })
                 });
                 
@@ -209,8 +226,16 @@
         }
 
         function window_onload() {
+            document.querySelectorAll('input[name="verdict-filter"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    currentFilter = e.target.value;
+                    currentPage = 0;
+                    fetchJury();
+                });
+            });
+
             fetchJury();
-            // setInterval(fetchJury, 30000);
+            setInterval(fetchJury, 30000);
         };
     </script>
 

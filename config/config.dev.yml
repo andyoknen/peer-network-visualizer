@@ -15,4 +15,4 @@ initial_peers:
   - "2.pocketnet.app"
 
 logging:
-  level: info  # или debug, info, warning, error, critical
+  level: error  # или debug, info, warning, error, critical

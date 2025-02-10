@@ -27,13 +27,16 @@ class ListNodesRequest(BaseModel):
 async def list_nodes(request: ListNodesRequest = Body(default=None)):
     nodes = []
     
-    if request is not None:
-        query = {"public": True} if request.public else {}
-        cursor = db.nodes.find(query)
-        if request.count > 0:
-            cursor = cursor.limit(request.count)
-    else:
-        cursor = db.nodes.find()
+    query = {}
+
+    query["height"] = {"$gt": 0}
+
+    if request and request.public:
+        query["public"] = True
+        
+    cursor = db.nodes.find(query)
+    if request and request.count > 0:
+        cursor = cursor.limit(request.count)
     
     for doc in cursor:
         peer_count = db.peers.count_documents({
@@ -51,18 +54,23 @@ class ListJuriesRequest(BaseModel):
     page: int = 0
     limit: int = 10
     desc: bool = True
+    verdict: int = -2
 
 @router.post("/list_juries")
 async def list_juries(request: ListJuriesRequest = Body(default=None)):
     skip = request.page * request.limit
     
-    cursor = db.juries.find().sort("height", -1 if request.desc else 1).skip(skip).limit(request.limit)
+    filter = {} # -2 - все, 0 - оправданные, 1 - осужденные, -1 - в процессе
+    if request.verdict != -2:
+        filter["verdict"] = request.verdict
+
+    cursor = db.juries.find(filter).sort("height", -1 if request.desc else 1).skip(skip).limit(request.limit)
     juries = []
     
     for jury in cursor:
         juries.append(Jury.from_dict(jury))
         
-    total = db.juries.count_documents({})
+    total = db.juries.count_documents(filter)
     
     return {
         "items": [jury.to_dict() for jury in juries],

@@ -96,19 +96,13 @@ class JuryDiscovery:
     async def discover_verdict_tasks(self):
         while not self.exit:
             try:
-                # Получаем жюри с вердиктом -1 и минимальным количеством проверок
-                jury = await self.db.juries.find_one(
-                    {"verdict": -1},
-                    sort=[("checked", 1)]
-                )
+                # Получаем активный узел
+                node = await self.get_active_node_instance()
+                if not node:
+                    await asyncio.sleep(10)
+                    continue
 
-                if jury:
-                    # Получаем активный узел
-                    node = await self.get_active_node_instance()
-                    if not node:
-                        await asyncio.sleep(10)
-                        continue
-
+                async for jury in self.db.juries.find({"verdict": -1}):
                     # Получаем актуальную информацию о жюри
                     async with ClientSession() as session:
                         async with session.post(
@@ -118,36 +112,38 @@ class JuryDiscovery:
                                 "params": [jury["id"]]
                             }
                         ) as response:
-                            if response.status == 200:
-                                data = await response.json()
-                                jury_details = data.get("result")
+                            if response.status != 200:
+                                continue
 
-                                if jury_details and jury_details.get("verdict") not in [-1, None]:
-                                    # Обновляем информацию в базе данных
-                                    await self.db.juries.update_one(
-                                        {"id": jury["id"]},
-                                        {
-                                            "$set": {
-                                                "verdict": jury_details["verdict"],
-                                                "checked": int(time.time())
-                                            }
-                                        }
-                                    )
+                            data = await response.json()
+                            jury_details = data.get("result")
 
-                await asyncio.sleep(10)
+                            if jury_details and jury_details.get("verdict") in [-1, None]:
+                                continue
+
+                            # Обновляем информацию в базе данных
+                            await self.db.juries.update_one(
+                                {"id": jury["id"]},
+                                {
+                                    "$set": {
+                                        "verdict": jury_details["verdict"]
+                                    }
+                                }
+                            )
+
+                await asyncio.sleep(60)
 
             except Exception as e:
                 log.error(f"Ошибка при получении деталей жюри: {e}")
                 await asyncio.sleep(10)
 
-    """Получение деталей жюри"""
+    """Получение дополнительной информации о жюри"""
     async def discover_details(self, jury: Jury):
-        while not self.exit:
-            try:
-                pass
-            except Exception as e:
-                log.error(f"Ошибка при получении деталей жюри: {e}")
-                await asyncio.sleep(10)
+        try:
+            # TODO: Получение дополнительной информации о жюри
+            pass
+        except Exception as e:
+            log.error(f"Ошибка при получении дополнительной информации о жюри: {e}")
 
     """Получение адреса активного узла из базы данных"""
     async def get_active_node_instance(self) -> Optional[Node]:

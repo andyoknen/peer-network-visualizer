@@ -12,7 +12,6 @@ class Jury:
     address: str
     reason: int
     verdict: int
-    checked: Optional[int] = 0
 
     def to_dict(self):
         return {
@@ -22,8 +21,7 @@ class Jury:
             "content_id": self.content_id,
             "content_type": self.content_type,
             "reason": self.reason,
-            "verdict": self.verdict,
-            "checked": self.checked
+            "verdict": self.verdict
         }
     
     @classmethod
@@ -35,8 +33,7 @@ class Jury:
             content_id = data.get("content_id", ""),
             content_type = data.get("content_type", 0),
             reason = data.get("reason", 0),
-            verdict = data.get("verdict", 0),
-            checked = data.get("checked", None)
+            verdict = data.get("verdict", 0)
         )
     
 
