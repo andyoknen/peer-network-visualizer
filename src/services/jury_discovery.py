@@ -118,7 +118,7 @@ class JuryDiscovery:
                             data = await response.json()
                             jury_details = data.get("result")
 
-                            if jury_details and jury_details.get("verdict") in [-1, None]:
+                            if jury_details and "verdict" in jury_details and jury_details.get("verdict") in [-1, None]:
                                 continue
 
                             # Обновляем информацию в базе данных
@@ -147,6 +147,9 @@ class JuryDiscovery:
 
     """Получение адреса активного узла из базы данных"""
     async def get_active_node_instance(self) -> Optional[Node]:
+        # return Node.from_dict({
+        #     "address": "127.0.0.1"
+        # })
         try:
             if not self.node is None:
                 return self.node
