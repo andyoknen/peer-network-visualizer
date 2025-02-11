@@ -147,9 +147,6 @@ class JuryDiscovery:
 
     """Получение адреса активного узла из базы данных"""
     async def get_active_node_instance(self) -> Optional[Node]:
-        # return Node.from_dict({
-        #     "address": "127.0.0.1"
-        # })
         try:
             if not self.node is None:
                 return self.node
