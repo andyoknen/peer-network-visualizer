@@ -44,6 +44,7 @@
                     <th>Высота</th>
                     <th>Причина</th>
                     <th>Вердикт</th>
+                    <th>Модераторы</th>
                 </tr>
             </thead>
             <tbody id="jury-list">
@@ -80,6 +81,15 @@
             <a href="https://bastyon.com/blockexplorer" style="color: var(--text-color);">Block Explorer</a>
         </p>
     </footer>
+
+    <!-- Добавляем модальное окно -->
+    <div id="moderatorsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Список модераторов</h2>
+            <div id="moderatorsList"></div>
+        </div>
+    </div>
 
     <script>
         let juryList = {};
@@ -118,6 +128,11 @@
                     <td>${jury.height}</td>
                     <td>${reasonText}</td>
                     <td>${verdictText}</td>
+                    <td class="moderators-cell" onclick="showModerators('${jury.id}')">
+                        <button>
+                            👥
+                        </button>
+                    </td>
                 `;
                 juryListElement.appendChild(row);
             });
@@ -237,6 +252,76 @@
             fetchJury();
             setInterval(fetchJury, 30000);
         };
+
+        async function showModerators(juryId) {
+            try {
+                const response = await fetch(`/jury_moderators/${juryId}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка получения модераторов');
+                }
+                
+                const moderators = await response.json();
+                
+                const moderatorsListElement = document.getElementById('moderatorsList');
+                if (moderators.length === 0) {
+                    moderatorsListElement.innerHTML = '<p>Нет модераторов</p>';
+                } else {
+                    // Сортируем модераторов: сначала голос "за" (1), потом "против" (0), затем без голоса (-1)
+                    const sortedModerators = [...moderators].sort((a, b) => {
+                        const voteA = typeof a === 'object' && 'vote' in a ? a.vote : -1;
+                        const voteB = typeof b === 'object' && 'vote' in b ? b.vote : -1;
+                        return voteB - voteA;
+                    });
+
+                    moderatorsListElement.innerHTML = `
+                        <table style="width: 100%;">
+                            <thead class="sticky-header">
+                                <tr>
+                                    <th>Адрес</th>
+                                    <th style="text-align: center;">Голос</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedModerators.map(moderator => {
+                                    const address = typeof moderator === 'string' ? moderator : moderator.address;
+                                    const vote = typeof moderator === 'object' && 'vote' in moderator ? 
+                                        moderator.vote === 1 ? '✓' : 
+                                        moderator.vote === 0 ? '✗' : 
+                                        '-' : '-';
+                                    const voteColor = moderator.vote === 1 ? 'vote-green' : moderator.vote === 0 ? 'vote-red' : 'vote-gray';
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${address}</td>
+                                            <td class="moderators-vote ${voteColor}">${vote}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+                
+                document.getElementById('moderatorsModal').style.display = 'block';
+            } catch (error) {
+                console.error('Ошибка при получении списка модераторов:', error);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('moderatorsModal').style.display = 'none';
+        }
+
+        // Закрытие модального окна при клике вне его
+        window.onclick = function(event) {
+            const modal = document.getElementById('moderatorsModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
     </script>
 
     <script src="/js/main.js"></script>

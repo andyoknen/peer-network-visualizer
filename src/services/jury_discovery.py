@@ -118,7 +118,7 @@ class JuryDiscovery:
                             data = await response.json()
                             jury_details = data.get("result")
 
-                            if jury_details and "verdict" in jury_details and jury_details.get("verdict") in [-1, None]:
+                            if not jury_details or "verdict" not in jury_details or jury_details.get("verdict") in [-1, None]:
                                 continue
 
                             # Обновляем информацию в базе данных
