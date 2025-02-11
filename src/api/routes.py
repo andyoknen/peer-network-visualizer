@@ -120,7 +120,7 @@ async def get_jury_moderators(jury_id: str):
         if not node:
             raise HTTPException(status_code=404, detail="Активная нода не найдена")
         
-        node['address'] = "pcore.public.localhost"
+        # node['address'] = "pcore.public.localhost"
 
         # Отправляем запрос на получение модераторов
         async with ClientSession() as session:
