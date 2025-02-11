@@ -20,17 +20,17 @@
             <div id="statistics">
                 <div id="stats-text"></div>
             </div>
-            <div class="filter-box" style="margin: 15px 0;">
-                <label style="margin-right: 15px;">
+            <div class="filter-box"">
+                <label>
                     <input type="radio" name="verdict-filter" value="-2" checked> Все
                 </label>
-                <label style="margin-right: 15px;">
+                <label>
                     <input type="radio" name="verdict-filter" value="-1"> В процессе
                 </label>
-                <label style="margin-right: 15px;">
+                <label>
                     <input type="radio" name="verdict-filter" value="0"> Оправдан
                 </label>
-                <label style="margin-right: 15px;">
+                <label>
                     <input type="radio" name="verdict-filter" value="1"> Осужден
                 </label>
             </div>
@@ -140,12 +140,11 @@
                 const globalIndex = currentPage * itemsPerPage + index + 1;
                 
                 // Создаем ячейку ID с учетом типа контента
-                const idCell = `<a class="link" href="https://bastyon.com/jury?i=${jury.id}" target="_blank">${jury.id}</a>`;
                 const addressCell = `<a class="link" href="https://bastyon.com/${jury.address}" target="_blank">${jury.address}</a>`;
                     
                 row.innerHTML = `
                     <td>${globalIndex}</td>
-                    <td>${idCell}</td>
+                    <td>${jury.id}</td>
                     <td>${addressCell}</td>
                     <td>${jury.height}</td>
                     <td>${contentTypeDictionary[jury.content_type] || jury.content_type}</td>
@@ -268,8 +267,21 @@
                 radio.addEventListener('change', (e) => {
                     currentFilter = e.target.value;
                     currentPage = 0;
+                    
+                    // Обновляем классы для всех label
+                    document.querySelectorAll('.filter-box label').forEach(label => {
+                        label.classList.remove('checked');
+                    });
+                    // Добавляем класс checked выбранному label
+                    e.target.closest('label').classList.add('checked');
+                    
                     fetchJury();
                 });
+                
+                // Устанавливаем начальное состояние
+                if (radio.checked) {
+                    radio.closest('label').classList.add('checked');
+                }
             });
 
             fetchJury();

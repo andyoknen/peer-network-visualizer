@@ -1,9 +1,9 @@
 :root {
     --bg-color: #f4f4f4;
     --text-color: #333333;
-    --header-bg: #548895;
+    --header-bg: #61879f;
     --header-text: white;
-    --header-subtitle: #a9d5cc;
+    --header-subtitle: #aac7d9;
     --table-border: #cfcfcf;
     --hover-bg: #548895;
     --hover-text: white;
@@ -12,7 +12,7 @@
     --offline-bg: #ddd;
     --offline-hover: #7c7c7c;
     --search-close: #4a4a4a;
-    --link: #0075dc;
+    --link: #23638b;
     --link-hover: #72b5eb;
 }
 
@@ -30,7 +30,7 @@
     --offline-bg: #2c2c2c;
     --offline-hover: #404040;
     --search-close: #aaaaaa;
-    --link: #0075dc;
+    --link: #496b8a;
     --link-hover: #72b5eb;
 }
 
@@ -101,6 +101,7 @@ tr:hover {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
+    margin-top: 20px;
     margin-bottom: 20px;
 }
 
@@ -343,4 +344,28 @@ tr:hover {
 .link:hover {
     color: #72b5eb;
     text-decoration: underline;
+}
+
+.filter-box {
+    display: flex;
+}
+
+.filter-box label {
+    display: inline-block;
+    padding: 8px 5px;
+    text-align: center;
+    width: 90px;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    cursor: pointer;
+    /* margin: -4px; */
+}
+
+.filter-box label.checked {
+    background-color: var(--link);
+    color: var(--header-text);
+}
+
+.filter-box label input {
+    display: none;
 }
