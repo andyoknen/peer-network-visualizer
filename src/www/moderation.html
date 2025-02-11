@@ -42,6 +42,7 @@
                     <th>ID</th>
                     <th>Адрес</th>
                     <th>Высота</th>
+                    <th>Тип</th>
                     <th>Причина</th>
                     <th>Вердикт</th>
                     <th>Модераторы</th>
@@ -87,7 +88,11 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h2>Список модераторов</h2>
-            <div id="moderatorsList"></div>
+            <div id="moderatorsList">
+                <div class="spinner" style="display: none;">
+                    <div class="spinner-inner"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -106,12 +111,24 @@
             '6': 'Спам'
         };
 
+        const contentTypeDictionary = {
+            '100': 'Аккаунт',
+            '200': 'Пост',
+            '201': 'Видео',
+            '202': 'Статья',
+            '209': 'Стрим',
+            '210': 'Аудио',
+            '220': 'Коллекция',
+            '221': 'Приложение',
+            '204': 'Комментарий'
+        };
+
         const verdictDictionary = {
             '-1': 'В процессе',
             '0': 'Оправдан',
             '1': 'Осужден'
         };
-
+        
         function renderJury() {
             const juryListElement = document.getElementById('jury-list');
             juryListElement.innerHTML = '';
@@ -121,11 +138,17 @@
                 const reasonText = reasonDictionary[jury.reason] || jury.reason;
                 const verdictText = verdictDictionary[jury.verdict] || jury.verdict;
                 const globalIndex = currentPage * itemsPerPage + index + 1;
+                
+                // Создаем ячейку ID с учетом типа контента
+                const idCell = `<a class="link" href="https://bastyon.com/jury?i=${jury.id}" target="_blank">${jury.id}</a>`;
+                const addressCell = `<a class="link" href="https://bastyon.com/${jury.address}" target="_blank">${jury.address}</a>`;
+                    
                 row.innerHTML = `
                     <td>${globalIndex}</td>
-                    <td>${jury.id}</td>
-                    <td>${jury.address}</td>
+                    <td>${idCell}</td>
+                    <td>${addressCell}</td>
                     <td>${jury.height}</td>
+                    <td>${contentTypeDictionary[jury.content_type] || jury.content_type}</td>
                     <td>${reasonText}</td>
                     <td>${verdictText}</td>
                     <td class="moderators-cell" onclick="showModerators('${jury.id}')">
@@ -254,6 +277,16 @@
         };
 
         async function showModerators(juryId) {
+            document.getElementById('moderatorsModal').style.display = 'block';
+            const moderatorsListElement = document.getElementById('moderatorsList');
+            
+            // Показываем спиннер
+            moderatorsListElement.innerHTML = `
+                <div class="spinner" style="display: flex;">
+                    <div class="spinner-inner"></div>
+                </div>
+            `;
+
             try {
                 const response = await fetch(`/jury_moderators/${juryId}`, {
                     method: 'POST'
@@ -265,7 +298,6 @@
                 
                 const moderators = await response.json();
                 
-                const moderatorsListElement = document.getElementById('moderatorsList');
                 if (moderators.length === 0) {
                     moderatorsListElement.innerHTML = '<p>Нет модераторов</p>';
                 } else {
@@ -295,7 +327,7 @@
                                     
                                     return `
                                         <tr>
-                                            <td>${address}</td>
+                                            <td><a class="link" href="https://bastyon.com/${address}" target="_blank">${address}</a></td>
                                             <td class="moderators-vote ${voteColor}">${vote}</td>
                                         </tr>
                                     `;
@@ -304,8 +336,6 @@
                         </table>
                     `;
                 }
-                
-                document.getElementById('moderatorsModal').style.display = 'block';
             } catch (error) {
                 console.error('Ошибка при получении списка модераторов:', error);
             }

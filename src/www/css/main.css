@@ -12,6 +12,8 @@
     --offline-bg: #ddd;
     --offline-hover: #7c7c7c;
     --search-close: #4a4a4a;
+    --link: #0075dc;
+    --link-hover: #72b5eb;
 }
 
 [data-theme="dark"] {
@@ -28,6 +30,8 @@
     --offline-bg: #2c2c2c;
     --offline-hover: #404040;
     --search-close: #aaaaaa;
+    --link: #0075dc;
+    --link-hover: #72b5eb;
 }
 
 body {
@@ -310,4 +314,33 @@ tr:hover {
 
 .vote-gray {
     color: gray;
+}
+
+
+.spinner {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+.spinner-inner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--text-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.link {
+    color: var(--link);
+    text-decoration: none;
+}
+
+.link:hover {
+    color: #72b5eb;
+    text-decoration: underline;
 }
