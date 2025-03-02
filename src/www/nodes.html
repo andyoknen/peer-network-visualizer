@@ -110,18 +110,26 @@
                 }
             }
 
+            // Сначала сортируем по адресу
             nodes.sort((a, b) => {
-                let aValue = a[key] || 0;
-                let bValue = b[key] || 0;
-                
-                // Специальная обработка для колонки версий
-                if (key === 'version') {
-                    aValue = versionToNumber(aValue);
-                    bValue = versionToNumber(bValue);
-                }
-                
-                return currentSortDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
+                return (a.address || '') < (b.address || '') ? 1 : -1;
             });
+
+            // Если сортировка не по адресу, применяем основную сортировку
+            if (key !== 'address') {
+                nodes.sort((a, b) => {
+                    let aValue = a[key] || 0;
+                    let bValue = b[key] || 0;
+                    
+                    // Специальная обработка для колонки версий
+                    if (key === 'version') {
+                        aValue = versionToNumber(aValue);
+                        bValue = versionToNumber(bValue);
+                    }
+                    
+                    return currentSortDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
+                });
+            }
 
             updateSortIcons();
         }
