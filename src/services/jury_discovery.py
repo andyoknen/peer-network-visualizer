@@ -66,7 +66,9 @@ class JuryDiscovery:
                             
                             # 3. Добавляем новые жюри в базу данных
                             if juries:
-                                for jury in juries:
+                                for item in juries:
+                                    jury = item["jury"]
+
                                     if 'height' not in jury or jury['height'] is None:
                                         continue
                                     
@@ -74,7 +76,7 @@ class JuryDiscovery:
                                     
                                     log.info(f"Добавление нового жюри: {jury}")
                                     await self.db.juries.update_one(
-                                        {"id": jury["id"]},
+                                        {"juryid": jury["juryid"]},
                                         {"$set": j.to_dict()},
                                         upsert=True
                                     )
@@ -109,7 +111,7 @@ class JuryDiscovery:
                             f"http://{node.address}:38081/rpc/public",
                             json={
                                 "method": "getjury",
-                                "params": [jury["id"]]
+                                "params": [jury["juryid"]]
                             }
                         ) as response:
                             if response.status != 200:
@@ -123,7 +125,7 @@ class JuryDiscovery:
 
                             # Обновляем информацию в базе данных
                             await self.db.juries.update_one(
-                                {"id": jury["id"]},
+                                {"juryid": jury["juryid"]},
                                 {
                                     "$set": {
                                         "verdict": jury_details["verdict"]
@@ -147,6 +149,10 @@ class JuryDiscovery:
 
     """Получение адреса активного узла из базы данных"""
     async def get_active_node_instance(self) -> Optional[Node]:
+        return Node.from_dict({
+            "address": "pcore",
+            "public": True
+        })
         try:
             if not self.node is None:
                 return self.node

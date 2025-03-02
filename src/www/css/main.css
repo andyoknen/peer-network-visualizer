@@ -105,10 +105,19 @@ tr:hover {
     margin-bottom: 20px;
 }
 
+.moderation-main .post-header-box {
+    justify-content: flex-end;
+}
+
+.moderation-main .post-header-box .search-box {
+    margin-right: 10px;
+    width: 500px;
+}
+
 .search-box {
     position: relative;
     display: flex;
-    align-items: bottom;
+    align-items: baseline;
     width: 20em;
 }
 
@@ -352,13 +361,12 @@ tr:hover {
 
 .filter-box label {
     display: inline-block;
-    padding: 8px 5px;
+    padding: 6px 5px;
     text-align: center;
     width: 90px;
     background-color: var(--header-bg);
     color: var(--header-text);
     cursor: pointer;
-    /* margin: -4px; */
 }
 
 .filter-box label.checked {

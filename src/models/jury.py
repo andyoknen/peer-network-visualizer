@@ -6,24 +6,22 @@ from models.peer import Peer
 @dataclass
 class Jury:
     height: int
-    id: str
+    juryid: str
     content_id: str
     content_type: int
     address: str
     reason: int
     verdict: int
-    modvotes: Optional[int] = 0
 
     def to_dict(self):
         return {
             "address": self.address,
             "height": self.height,
-            "id": self.id,
+            "juryid": self.juryid,
             "content_id": self.content_id,
             "content_type": self.content_type,
             "reason": self.reason,
-            "verdict": self.verdict,
-            "modvotes": self.modvotes
+            "verdict": self.verdict
         }
     
     @classmethod
@@ -31,13 +29,9 @@ class Jury:
         return cls(
             address = data.get("address", ""),
             height = data.get("height", 0),
-            id = data.get("id", ""),
+            juryid = data.get("juryid", ""),
             content_id = data.get("content_id", ""),
             content_type = data.get("content_type", 0),
             reason = data.get("reason", 0),
-            verdict = data.get("verdict", 0),
-            modvotes = data.get("modvotes", 0)
+            verdict = data.get("verdict", 0)
         )
-    
-
-    

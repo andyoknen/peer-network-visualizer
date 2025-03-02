@@ -15,10 +15,14 @@
         <div class="head-box-item head-box-title"><a href="/moderation">Moderation</a></div>
     </header>
     
-    <main>
+    <main class="moderation-main">
         <div class="post-header-box">
             <div id="statistics">
                 <div id="stats-text"></div>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Поиск.." oninput="filterJury()" class="search-field">
+                <button onclick="clearSearch()" class="search-close">✖</button>
             </div>
             <div class="filter-box"">
                 <label>
@@ -101,6 +105,7 @@
         let currentPage = 0;
         let itemsPerPage = parseInt(localStorage.getItem('itemsPerPage')) || 15;
         let currentFilter = '-2';
+        let searchQuery = '';
 
         const reasonDictionary = {
             '1': 'Эротика/Порно',
@@ -144,13 +149,13 @@
                     
                 row.innerHTML = `
                     <td>${globalIndex}</td>
-                    <td>${jury.id}</td>
+                    <td>${jury.content_id}</td>
                     <td>${addressCell}</td>
                     <td>${jury.height}</td>
                     <td>${contentTypeDictionary[jury.content_type] || jury.content_type}</td>
                     <td>${reasonText}</td>
                     <td>${verdictText}</td>
-                    <td class="moderators-cell" onclick="showModerators('${jury.id}')">
+                    <td class="moderators-cell" onclick="showModerators('${jury.juryid}')">
                         <button>
                             👥
                         </button>
@@ -251,7 +256,8 @@
                     body: JSON.stringify({
                         "page": currentPage,
                         "limit": itemsPerPage,
-                        "verdict": parseInt(currentFilter)
+                        "verdict": parseInt(currentFilter),
+                        "search": searchQuery
                     })
                 });
                 
@@ -260,6 +266,19 @@
             } catch (error) {
                 console.error('Ошибка при получении списка жюри:', error);
             }
+        }
+
+        function filterJury() {
+            searchQuery = document.getElementById('search-input').value;
+            currentPage = 0; // Сбрасываем на первую страницу при поиске
+            fetchJury();
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            searchQuery = '';
+            currentPage = 0; // Сбрасываем на первую страницу при очистке
+            fetchJury();
         }
 
         function window_onload() {

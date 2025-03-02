@@ -12,14 +12,17 @@ from aiohttp import ClientSession
 
 router = APIRouter()
 
-# Создание клиента MongoDB с использованием конфигурации
 client = MongoClient(config['mongodb']['uri'])
 db = client[config['mongodb']['database']]
 
-# Сначала создайте индексы (выполнить один раз при настройке БД):
 db.peers.create_index("address")
 db.peers.create_index("address_node")
 
+db.juries.create_index([
+    ("id", "text"),
+    ("address", "text"),
+    ("content_id", "text")
+])
 
 ### Static files
 @router.get("/{filename:path}")
@@ -83,7 +86,7 @@ class ListJuriesRequest(BaseModel):
     limit: int = 10
     desc: bool = True
     verdict: int = -2
-
+    search: str = ""
 @router.post("/list_juries")
 async def list_juries(request: ListJuriesRequest = Body(default=None)):
     skip = request.page * request.limit
@@ -91,6 +94,9 @@ async def list_juries(request: ListJuriesRequest = Body(default=None)):
     filter = {} # -2 - все, 0 - оправданные, 1 - осужденные, -1 - в процессе
     if request.verdict != -2:
         filter["verdict"] = request.verdict
+
+    if request.search:
+        filter["$text"] = {"$search": request.search}
 
     cursor = db.juries.find(filter).sort("height", -1 if request.desc else 1).skip(skip).limit(request.limit)
     juries = []
@@ -119,6 +125,8 @@ async def get_jury_moderators(jury_id: str):
         
         if not node:
             raise HTTPException(status_code=404, detail="Активная нода не найдена")
+        
+        node['address'] = "pcore"
         
         # Отправляем запрос на получение модераторов
         async with ClientSession() as session:
