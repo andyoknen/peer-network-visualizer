@@ -114,11 +114,19 @@ tr:hover {
     width: 500px;
 }
 
+.search-filter-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-bottom: 5px;
+}
+
 .search-box {
     position: relative;
     display: flex;
     align-items: baseline;
     width: 20em;
+    margin-bottom: 5px;
 }
 
 .search-field {

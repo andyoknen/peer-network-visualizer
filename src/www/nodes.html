@@ -20,9 +20,28 @@
             <div id="statistics">
                 <div id="stats-text"></div>
             </div>
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Поиск.." oninput="filterNodes()" class="search-field">
-                <button onclick="clearSearch()" class="search-close">✖</button>
+            <div class="search-filter-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Поиск.." oninput="filterNodes()" class="search-field">
+                    <button onclick="clearSearch()" class="search-close">✖</button>
+                </div>
+                <div class="filter-box">
+                    <label>
+                        <input type="radio" name="node-filter" value="all" checked> Все
+                    </label>
+                    <label>
+                        <input type="radio" name="node-filter" value="public"> Публичные
+                    </label>
+                    <label>
+                        <input type="radio" name="node-filter" value="i2p"> I2P
+                    </label>
+                    <label>
+                        <input type="radio" name="node-filter" value="ipv6"> IPv6
+                    </label>
+                    <label>
+                        <input type="radio" name="node-filter" value="ipv4"> IPv4
+                    </label>
+                </div>
             </div>
         </div>
         <table>
@@ -34,7 +53,7 @@
                     <th>Высота <span class="sort-icon" id="sort-height"></span></th>
                     <th>Состояние <span class="sort-icon" id="sort-status"></span></th>
                     <th>Пиры <span class="sort-icon" id="sort-peers"></span></th>
-                    <th>Онлайн <span class="sort-icon" id="sort-public"></span></th>
+                    <th>Публичные <span class="sort-icon" id="sort-public"></span></th>
                     <th>Обновлено <span class="sort-icon" id="sort-updated"></span></th>
                 </tr>
             </thead>
@@ -68,6 +87,7 @@
         let nodes = []; // Хранение узлов для сортировки
         let currentSortColumn = 0; // Индекс текущей колонки сортировки
         let currentSortDirection = 'desc'; // Направление сортировки (asc или desc)
+        let currentFilter = 'all'; // Текущий выбранный фильтр
 
         function versionToNumber(version) {
             // Проверяем, что версия существует
@@ -206,15 +226,41 @@
             `;
         }
 
+        function isNodeMatchingFilter(node, filter) {
+            switch (filter) {
+                case 'all':
+                    return true;
+                case 'i2p':
+                    return node.address && node.address.includes('.i2p');
+                case 'ipv6':
+                    return node.address && node.address.includes(':') && !node.address.includes('.i2p');
+                case 'ipv4':
+                    return node.address && /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}/.test(node.address);
+                case 'public':
+                    return node.public === true;
+                default:
+                    return true;
+            }
+        }
+
+        function formatAddress(address) {
+            // Обрезаем ":0" с конца i2p адресов
+            if (address && address.includes('.i2p') && address.endsWith(':0')) {
+                return address.slice(0, -2);
+            }
+            return address;
+        }
+
         function renderNodes() {
             const nodeList = document.getElementById('node-list');
             nodeList.innerHTML = '';
 
             const searchValue = document.getElementById('search-input').value.toLowerCase();
             const filteredNodes = nodes.filter(node => {
-                return Object.values(node).some(value =>
+                const matchesSearch = Object.values(node).some(value =>
                     String(value).toLowerCase().includes(searchValue)
                 );
+                return matchesSearch && isNodeMatchingFilter(node, currentFilter);
             });
 
             let maxHeight = filteredNodes.reduce((max, node) => {
@@ -232,7 +278,7 @@
 
                 row.innerHTML = `
                     <td>${index + 1}</td>
-                    <td>${node.address}</td>
+                    <td>${formatAddress(node.address)}</td>
                     <td>${node.version ? node.version : ''}</td>
                     <td>${node.height && node.height !== -1 ? node.height.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '-'}</td>
                     <td>${node.height && node.height !== -1 ? (Math.round(((node.height / maxHeight) * 100) * 100) / 100).toFixed(2) + '%' : ''}</td>
@@ -311,6 +357,27 @@
                     sortNodes(index);
                     renderNodes(); // Обновляем отображение узлов после сортировки
                 });
+            });
+
+            // Добавляем обработчики для радио-кнопок фильтров
+            document.querySelectorAll('input[name="node-filter"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    currentFilter = e.target.value;
+                    
+                    // Обновляем классы для всех label
+                    document.querySelectorAll('.filter-box label').forEach(label => {
+                        label.classList.remove('checked');
+                    });
+                    // Добавляем класс checked выбранному label
+                    e.target.closest('label').classList.add('checked');
+                    
+                    renderNodes();
+                });
+                
+                // Устанавливаем начальное состояние
+                if (radio.checked) {
+                    radio.closest('label').classList.add('checked');
+                }
             });
         };
     </script>
