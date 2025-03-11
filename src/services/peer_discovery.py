@@ -86,10 +86,6 @@ class PeerDiscovery:
             async with self.lock:
                 async for doc in self.db.nodes.find({}).sort("fetch", 1).limit(1):
                     node = Node.from_dict(doc)
-                    if not node:
-                        nodes = await self.load_known_nodes_from_db()
-                        node = nodes[list(nodes.keys())[0]]
-
                     node.fetch = int(datetime.now(UTC).timestamp())
                     await self.db.nodes.update_one(
                         {"address": node.address},
@@ -97,6 +93,9 @@ class PeerDiscovery:
                         upsert=True
                     )
                     return node
+            
+            nodes = await self.load_known_nodes_from_db()
+            return nodes[list(nodes.keys())[0]]
         except Exception as e:
             log.error(f"Ошибка при получении самой старой ноды из базы данных: {e}")
             return None
