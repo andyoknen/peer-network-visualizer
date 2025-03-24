@@ -50,7 +50,6 @@
                     <th>Причина</th>
                     <th class="right-align">Флаги</th>
                     <th>Вердикт</th>
-                    <th class="right-align">Голоса</th>
                     <th>Модераторы</th>
                 </tr>
             </thead>
@@ -131,9 +130,9 @@
         };
 
         const verdictDictionary = {
-            '-1': 'В процессе',
-            '0': 'Оправдан',
-            '1': 'Осужден'
+            '-1': '- В процессе',
+            '0': '✗ Оправдан',
+            '1': '✓ Осужден'
         };
         
         function renderJury() {
@@ -158,12 +157,7 @@
                     <td>${reasonText}</td>
                     <td class="right-align">${jury.flag_count}</td>
                     <td>${verdictText}</td>
-                    <td class="right-align">${jury.votes}/${jury.vote_count}</td>
-                    <td class="moderators-cell" onclick="showModerators('${jury.juryid}')">
-                        <button>
-                            👥
-                        </button>
-                    </td>
+                    <td class="moderators-cell" onclick="showModerators('${jury.juryid}')">${jury.votes}/${jury.vote_count} <button>👥</button></td>
                 `;
                 juryListElement.appendChild(row);
             });
