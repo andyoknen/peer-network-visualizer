@@ -1,10 +1,9 @@
-from typing import List, Optional
+from typing import Optional
 from models.node import Node
 from models.jury import Jury
-from aiohttp import ClientTimeout, ClientSession
+from models.user import User
+from aiohttp import ClientSession
 import asyncio
-import time
-from datetime import datetime, UTC
 
 import logging
 log = logging.getLogger(__name__)
@@ -73,6 +72,10 @@ class JuryDiscovery:
                                         continue
                                     
                                     j = Jury.from_dict(jury)
+                                    if 'userprofile' in item:
+                                        j.user = User.from_dict(item['userprofile'])
+                                    else:
+                                        j.user = User.from_dict(item)
                                     
                                     log.info(f"Добавление нового жюри: {jury}")
                                     await self.db.juries.update_one(
@@ -149,16 +152,12 @@ class JuryDiscovery:
 
     """Получение адреса активного узла из базы данных"""
     async def get_active_node_instance(self) -> Optional[Node]:
-        return Node.from_dict({
-            "address": "pcore",
-            "public": True
-        })
         try:
             if not self.node is None:
                 return self.node
             
             node = await self.db.nodes.find_one(
-                {"public": True},
+                {"public": True, "version": {"$gte": "0.22.13"}},
                 sort=[("update", -1)]
             )
 

@@ -44,11 +44,13 @@
                 <tr>
                     <th>#</th>
                     <th>ID</th>
-                    <th>Адрес</th>
+                    <th>Пользователь</th>
                     <th>Высота</th>
                     <th>Тип</th>
                     <th>Причина</th>
+                    <th class="right-align">Флаги</th>
                     <th>Вердикт</th>
+                    <th class="right-align">Голоса</th>
                     <th>Модераторы</th>
                 </tr>
             </thead>
@@ -145,7 +147,7 @@
                 const globalIndex = currentPage * itemsPerPage + index + 1;
                 
                 // Создаем ячейку ID с учетом типа контента
-                const addressCell = `<a class="link" href="https://bastyon.com/${jury.address}" target="_blank">${jury.address}</a>`;
+                const addressCell = `<a class="link" href="https://bastyon.com/${jury.address}" target="_blank">${jury.address} ${jury.user.name}</a>`;
                     
                 row.innerHTML = `
                     <td>${globalIndex}</td>
@@ -154,7 +156,9 @@
                     <td>${jury.height}</td>
                     <td>${contentTypeDictionary[jury.content_type] || jury.content_type}</td>
                     <td>${reasonText}</td>
+                    <td class="right-align">${jury.flag_count}</td>
                     <td>${verdictText}</td>
+                    <td class="right-align">${jury.votes}/${jury.vote_count}</td>
                     <td class="moderators-cell" onclick="showModerators('${jury.juryid}')">
                         <button>
                             👥

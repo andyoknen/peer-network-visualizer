@@ -13,7 +13,7 @@
     --offline-hover: #7c7c7c;
     --search-close: #4a4a4a;
     --link: #23638b;
-    --link-hover: #72b5eb;
+    --link-hover: white;
 }
 
 [data-theme="dark"] {
@@ -71,6 +71,11 @@ td {
     white-space: nowrap;
 }
 
+th.right-align,
+td.right-align {
+    text-align: right;
+}
+
 th {
     background-color: var(--header-bg);
     color: var(--header-text);
@@ -80,6 +85,10 @@ th {
 tr:hover {
     background-color: var(--hover-bg);
     color: var(--hover-text);
+}
+
+tr:hover td a {
+    color: var(--link-hover);
 }
 
 .sort-icon {
@@ -359,7 +368,7 @@ tr:hover {
 }
 
 .link:hover {
-    color: #72b5eb;
+    color: var(--link-hover);
     text-decoration: underline;
 }
 

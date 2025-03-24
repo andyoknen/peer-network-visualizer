@@ -119,14 +119,12 @@ async def get_jury_moderators(jury_id: str):
     try:
         # Получаем активную ноду
         node = db.nodes.find_one(
-            {"public": True},
+            {"public": True, "version": {"$gte": "0.22.13"}},
             sort=[("update", -1)]
         )
         
         if not node:
             raise HTTPException(status_code=404, detail="Активная нода не найдена")
-        
-        node['address'] = "pcore"
         
         # Отправляем запрос на получение модераторов
         async with ClientSession() as session:
