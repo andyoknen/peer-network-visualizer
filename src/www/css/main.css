@@ -269,7 +269,7 @@ tr:hover td a {
     background-color: var(--header-bg);
     color: var(--header-text);
     border: 1px solid var(--header-bg);
-    cursor: default;
+    cursor: pointer;
     border-radius: 3px;
     font-weight: bold;
 }
