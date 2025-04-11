@@ -157,7 +157,7 @@ class JuryDiscovery:
                 return self.node
             
             node = await self.db.nodes.find_one(
-                {"public": True, "version": {"$gte": "0.22.13"}},
+                {"public": True, "version": {"$gte": "0.22.14"}},
                 sort=[("update", -1)]
             )
 
