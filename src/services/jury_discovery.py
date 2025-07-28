@@ -131,7 +131,8 @@ class JuryDiscovery:
                                 {"juryid": jury["juryid"]},
                                 {
                                     "$set": {
-                                        "verdict": jury_details["verdict"]
+                                        "verdict": jury_details["verdict"],
+                                        "votes": jury["vote_count"],
                                     }
                                 }
                             )

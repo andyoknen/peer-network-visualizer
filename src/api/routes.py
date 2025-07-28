@@ -5,7 +5,7 @@ from models.node import Node
 from models.peer import Peer
 from models.jury import Jury
 from services.helpers import config
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from typing import ClassVar
 from aiohttp import ClientSession
@@ -45,7 +45,7 @@ async def serve_static(filename: str):
     if os.path.exists(file_path):
         return FileResponse(file_path)
     else:
-        raise HTTPException(status_code=404, detail="Файл не найден")
+        return RedirectResponse(url="/index", status_code=302)
 
 
 ### API
